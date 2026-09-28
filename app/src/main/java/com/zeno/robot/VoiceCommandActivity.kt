@@ -1,49 +1,33 @@
 package com.zeno.robot
 
-import android.app.Activity
+import android.Manifest
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.os.Bundle
+import android.speech.RecognitionListener
 import android.speech.RecognizerIntent
+import android.speech.SpeechRecognizer
 import android.speech.tts.TextToSpeech
 import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.core.content.ContextCompat
 import com.zeno.robot.data.ZenoBrain
 import java.util.Locale
 
 class VoiceCommandActivity : ComponentActivity() {
     private lateinit var brain: ZenoBrain
+    private var speechRecognizer: SpeechRecognizer? = null
     private var tts: TextToSpeech? = null
+    private var handled = false
 
-    private val speechLauncher = registerForActivityResult(
-        ActivityResultContracts.StartActivityForResult()
-    ) { result ->
-        if (result.resultCode != Activity.RESULT_OK) {
-            Toast.makeText(this, "Je n’ai rien entendu. Réessaie en touchant Zeno.", Toast.LENGTH_SHORT).show()
+    private val micPermission = registerForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) { granted ->
+        if (granted) startDirectListening() else {
+            Toast.makeText(this, "Autorise le microphone pour parler à Zeno.", Toast.LENGTH_LONG).show()
             finish()
-            return@registerForActivityResult
         }
-
-        val sentence = result.data
-            ?.getStringArrayListExtra(RecognizerIntent.EXTRA_RESULTS)
-            ?.firstOrNull()
-            ?.trim()
-            .orEmpty()
-
-        if (sentence.isBlank()) {
-            Toast.makeText(this, "Je n’ai pas compris. Réessaie.", Toast.LENGTH_SHORT).show()
-            finish()
-            return@registerForActivityResult
-        }
-
-        Toast.makeText(this, "Vous : $sentence", Toast.LENGTH_SHORT).show()
-        val resultText = when (val reply = brain.reply(sentence)) {
-            is ZenoBrain.Result.Text -> reply.text
-            is ZenoBrain.Result.Action -> reply.text
-        }
-        Toast.makeText(this, "Zeno : $resultText", Toast.LENGTH_LONG).show()
-        tts?.speak(resultText, TextToSpeech.QUEUE_FLUSH, null, "zeno_voice_command")
-        window.decorView.postDelayed({ finish() }, 2000)
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -52,25 +36,96 @@ class VoiceCommandActivity : ComponentActivity() {
         tts = TextToSpeech(this) { status ->
             if (status == TextToSpeech.SUCCESS) tts?.language = Locale.FRENCH
         }
-        launchSpeech()
+
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED) {
+            startDirectListening()
+        } else {
+            micPermission.launch(Manifest.permission.RECORD_AUDIO)
+        }
     }
 
-    private fun launchSpeech() {
+    private fun startDirectListening() {
+        if (!SpeechRecognizer.isRecognitionAvailable(this)) {
+            Toast.makeText(this, "La reconnaissance vocale Android n’est pas disponible.", Toast.LENGTH_LONG).show()
+            finish()
+            return
+        }
+
+        speechRecognizer?.destroy()
+        speechRecognizer = SpeechRecognizer.createSpeechRecognizer(this).apply {
+            setRecognitionListener(object : RecognitionListener {
+                override fun onReadyForSpeech(params: Bundle?) {
+                    Toast.makeText(this@VoiceCommandActivity, "Zeno t’écoute…", Toast.LENGTH_SHORT).show()
+                }
+
+                override fun onBeginningOfSpeech() = Unit
+                override fun onRmsChanged(rmsdB: Float) = Unit
+                override fun onBufferReceived(buffer: ByteArray?) = Unit
+                override fun onEndOfSpeech() = Unit
+
+                override fun onError(error: Int) {
+                    if (handled) return
+                    handled = true
+                    val text = when (error) {
+                        SpeechRecognizer.ERROR_NO_MATCH -> "Je n’ai pas compris."
+                        SpeechRecognizer.ERROR_SPEECH_TIMEOUT -> "Je n’ai rien entendu."
+                        SpeechRecognizer.ERROR_NETWORK, SpeechRecognizer.ERROR_NETWORK_TIMEOUT -> "La reconnaissance vocale n’a pas de réseau."
+                        else -> "La reconnaissance vocale a rencontré un problème."
+                    }
+                    Toast.makeText(this@VoiceCommandActivity, text, Toast.LENGTH_SHORT).show()
+                    finish()
+                }
+
+                override fun onResults(results: Bundle?) {
+                    if (handled) return
+                    handled = true
+                    val sentence = results
+                        ?.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION)
+                        ?.firstOrNull()
+                        ?.trim()
+                        .orEmpty()
+
+                    if (sentence.isBlank()) {
+                        Toast.makeText(this@VoiceCommandActivity, "Je n’ai pas compris.", Toast.LENGTH_SHORT).show()
+                        finish()
+                        return
+                    }
+
+                    Toast.makeText(this@VoiceCommandActivity, "Vous : $sentence", Toast.LENGTH_SHORT).show()
+                    val replyText = when (val reply = brain.reply(sentence)) {
+                        is ZenoBrain.Result.Text -> reply.text
+                        is ZenoBrain.Result.Action -> reply.text
+                    }
+                    Toast.makeText(this@VoiceCommandActivity, "Zeno : $replyText", Toast.LENGTH_LONG).show()
+                    tts?.speak(replyText, TextToSpeech.QUEUE_FLUSH, null, "zeno_voice_command")
+                    window.decorView.postDelayed({ finish() }, 1600)
+                }
+
+                override fun onPartialResults(partialResults: Bundle?) = Unit
+                override fun onEvent(eventType: Int, params: Bundle?) = Unit
+            })
+        }
+
         val intent = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {
             putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
             putExtra(RecognizerIntent.EXTRA_LANGUAGE, "fr-FR")
             putExtra(RecognizerIntent.EXTRA_LANGUAGE_PREFERENCE, "fr-FR")
-            putExtra(RecognizerIntent.EXTRA_PROMPT, "Parle à Zeno")
             putExtra(RecognizerIntent.EXTRA_MAX_RESULTS, 5)
+            putExtra(RecognizerIntent.EXTRA_PARTIAL_RESULTS, false)
+            putExtra(RecognizerIntent.EXTRA_PREFER_OFFLINE, true)
         }
-        runCatching { speechLauncher.launch(intent) }
+
+        runCatching { speechRecognizer?.startListening(intent) }
             .onFailure {
-                Toast.makeText(this, "La reconnaissance vocale Android n’est pas disponible sur ce téléphone.", Toast.LENGTH_LONG).show()
+                Toast.makeText(this, "Impossible de démarrer le micro.", Toast.LENGTH_LONG).show()
                 finish()
             }
     }
 
     override fun onDestroy() {
+        speechRecognizer?.cancel()
+        speechRecognizer?.destroy()
+        speechRecognizer = null
         tts?.shutdown()
         tts = null
         super.onDestroy()
