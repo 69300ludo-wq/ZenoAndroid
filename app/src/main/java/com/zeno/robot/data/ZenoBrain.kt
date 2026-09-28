@@ -18,14 +18,11 @@ class ZenoBrain(private val context: Context) {
         val lower = clean.lowercase()
         val launcher = AppLauncher(context)
 
-        val openPrefixes = listOf("ouvre ", "lance ", "démarre ", "demarre ")
-        val prefix = openPrefixes.firstOrNull { lower.startsWith(it) }
-        if (prefix != null) {
-            val target = clean.substring(prefix.length).trim()
+        extractOpenTarget(clean)?.let { target ->
             return if (launcher.openByName(target)) {
                 Result.Action("J’ouvre $target pour toi.")
             } else {
-                Result.Text("Je n’ai pas trouvé l’application « $target ». Tu peux la choisir dans l’onglet Applications.")
+                Result.Text("Je n’ai pas trouvé l’application « $target ». Ouvre l’onglet Mes applis pour vérifier son nom.")
             }
         }
 
@@ -41,6 +38,31 @@ class ZenoBrain(private val context: Context) {
         }
 
         return Result.Text(localReply(lower))
+    }
+
+    private fun extractOpenTarget(message: String): String? {
+        var text = message.trim()
+        val lower = text.lowercase()
+
+        val wakePrefixes = listOf("salut zeno ", "salut zéno ", "bonjour zeno ", "bonjour zéno ", "zeno ", "zéno ")
+        wakePrefixes.firstOrNull { lower.startsWith(it) }?.let {
+            text = text.substring(it.length).trim()
+        }
+
+        val patterns = listOf(
+            Regex("^(ouvre|lance|demarre|démarre)\\s+(moi\\s+)?(.+)$", RegexOption.IGNORE_CASE),
+            Regex("^(ouvre|lance|demarre|démarre)-moi\\s+(.+)$", RegexOption.IGNORE_CASE),
+            Regex("^peux[- ]tu\\s+(ouvrir|lancer|demarrer|démarrer)\\s+(.+)$", RegexOption.IGNORE_CASE),
+            Regex("^va\\s+sur\\s+(.+)$", RegexOption.IGNORE_CASE)
+        )
+
+        for (pattern in patterns) {
+            val match = pattern.find(text) ?: continue
+            val groups = match.groupValues.drop(1).filter { it.isNotBlank() }
+            val target = groups.lastOrNull()?.trim().orEmpty()
+            if (target.isNotBlank()) return target
+        }
+        return null
     }
 
     fun searchWeb(query: String) {
