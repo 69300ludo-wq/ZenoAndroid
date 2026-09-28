@@ -29,6 +29,12 @@
             android:name=".MainActivity"
             android:exported="true" />
 
+        <activity
+            android:name=".SetupActivity"
+            android:exported="false"
+            android:excludeFromRecents="true"
+            android:noHistory="true" />
+
         <activity-alias
             android:name=".LauncherCyan"
             android:enabled="true"
