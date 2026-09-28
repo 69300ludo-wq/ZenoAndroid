@@ -19,7 +19,7 @@ class VoiceCommandActivity : ComponentActivity() {
         ActivityResultContracts.StartActivityForResult()
     ) { result ->
         if (result.resultCode != Activity.RESULT_OK) {
-            Toast.makeText(this, "Je n’ai rien entendu.", Toast.LENGTH_SHORT).show()
+            Toast.makeText(this, "Je n’ai rien entendu. Réessaie en touchant Zeno.", Toast.LENGTH_SHORT).show()
             finish()
             return@registerForActivityResult
         }
@@ -31,7 +31,7 @@ class VoiceCommandActivity : ComponentActivity() {
             .orEmpty()
 
         if (sentence.isBlank()) {
-            Toast.makeText(this, "Je n’ai pas compris.", Toast.LENGTH_SHORT).show()
+            Toast.makeText(this, "Je n’ai pas compris. Réessaie.", Toast.LENGTH_SHORT).show()
             finish()
             return@registerForActivityResult
         }
@@ -43,7 +43,7 @@ class VoiceCommandActivity : ComponentActivity() {
         }
         Toast.makeText(this, "Zeno : $resultText", Toast.LENGTH_LONG).show()
         tts?.speak(resultText, TextToSpeech.QUEUE_FLUSH, null, "zeno_voice_command")
-        window.decorView.postDelayed({ finish() }, 1800)
+        window.decorView.postDelayed({ finish() }, 2000)
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -62,11 +62,10 @@ class VoiceCommandActivity : ComponentActivity() {
             putExtra(RecognizerIntent.EXTRA_LANGUAGE_PREFERENCE, "fr-FR")
             putExtra(RecognizerIntent.EXTRA_PROMPT, "Parle à Zeno")
             putExtra(RecognizerIntent.EXTRA_MAX_RESULTS, 5)
-            putExtra(RecognizerIntent.EXTRA_PREFER_OFFLINE, true)
         }
         runCatching { speechLauncher.launch(intent) }
             .onFailure {
-                Toast.makeText(this, "La reconnaissance vocale Android n’est pas disponible.", Toast.LENGTH_LONG).show()
+                Toast.makeText(this, "La reconnaissance vocale Android n’est pas disponible sur ce téléphone.", Toast.LENGTH_LONG).show()
                 finish()
             }
     }
