@@ -1,0 +1,5 @@
+<resources>
+    <string name="app_name">Zeno</string>
+    <string name="channel_name">Zeno flottant</string>
+    <string name="channel_description">Maintient Zeno visible au-dessus de vos applications.</string>
+</resources>
