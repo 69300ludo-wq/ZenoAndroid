@@ -3,6 +3,7 @@ package com.zeno.robot
 import android.Manifest
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.os.Build
 import android.os.Bundle
 import android.speech.RecognitionListener
 import android.speech.RecognizerIntent
@@ -44,6 +45,17 @@ class VoiceCommandActivity : ComponentActivity() {
         }
     }
 
+    private fun createRecognizer(): SpeechRecognizer {
+        return if (
+            Build.VERSION.SDK_INT >= Build.VERSION_CODES.S &&
+            SpeechRecognizer.isOnDeviceRecognitionAvailable(this)
+        ) {
+            SpeechRecognizer.createOnDeviceSpeechRecognizer(this)
+        } else {
+            SpeechRecognizer.createSpeechRecognizer(this)
+        }
+    }
+
     private fun startDirectListening() {
         if (!SpeechRecognizer.isRecognitionAvailable(this)) {
             Toast.makeText(this, "La reconnaissance vocale Android n’est pas disponible.", Toast.LENGTH_LONG).show()
@@ -51,8 +63,9 @@ class VoiceCommandActivity : ComponentActivity() {
             return
         }
 
+        handled = false
         speechRecognizer?.destroy()
-        speechRecognizer = SpeechRecognizer.createSpeechRecognizer(this).apply {
+        speechRecognizer = createRecognizer().apply {
             setRecognitionListener(object : RecognitionListener {
                 override fun onReadyForSpeech(params: Bundle?) {
                     Toast.makeText(this@VoiceCommandActivity, "Zeno t’écoute…", Toast.LENGTH_SHORT).show()
@@ -69,7 +82,7 @@ class VoiceCommandActivity : ComponentActivity() {
                     val text = when (error) {
                         SpeechRecognizer.ERROR_NO_MATCH -> "Je n’ai pas compris."
                         SpeechRecognizer.ERROR_SPEECH_TIMEOUT -> "Je n’ai rien entendu."
-                        SpeechRecognizer.ERROR_NETWORK, SpeechRecognizer.ERROR_NETWORK_TIMEOUT -> "La reconnaissance vocale n’a pas de réseau."
+                        SpeechRecognizer.ERROR_NETWORK, SpeechRecognizer.ERROR_NETWORK_TIMEOUT -> "La reconnaissance vocale Android demande une connexion sur ce téléphone."
                         else -> "La reconnaissance vocale a rencontré un problème."
                     }
                     Toast.makeText(this@VoiceCommandActivity, text, Toast.LENGTH_SHORT).show()
@@ -79,20 +92,20 @@ class VoiceCommandActivity : ComponentActivity() {
                 override fun onResults(results: Bundle?) {
                     if (handled) return
                     handled = true
-                    val sentence = results
+                    val candidates = results
                         ?.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION)
-                        ?.firstOrNull()
-                        ?.trim()
                         .orEmpty()
+                        .map { it.trim() }
+                        .filter { it.isNotBlank() }
 
-                    if (sentence.isBlank()) {
+                    if (candidates.isEmpty()) {
                         Toast.makeText(this@VoiceCommandActivity, "Je n’ai pas compris.", Toast.LENGTH_SHORT).show()
                         finish()
                         return
                     }
 
-                    Toast.makeText(this@VoiceCommandActivity, "Vous : $sentence", Toast.LENGTH_SHORT).show()
-                    val replyText = when (val reply = brain.reply(sentence)) {
+                    Toast.makeText(this@VoiceCommandActivity, "Vous : ${candidates.first()}", Toast.LENGTH_SHORT).show()
+                    val replyText = when (val reply = brain.replyCandidates(candidates)) {
                         is ZenoBrain.Result.Text -> reply.text
                         is ZenoBrain.Result.Action -> reply.text
                     }
@@ -110,9 +123,8 @@ class VoiceCommandActivity : ComponentActivity() {
             putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
             putExtra(RecognizerIntent.EXTRA_LANGUAGE, "fr-FR")
             putExtra(RecognizerIntent.EXTRA_LANGUAGE_PREFERENCE, "fr-FR")
-            putExtra(RecognizerIntent.EXTRA_MAX_RESULTS, 5)
+            putExtra(RecognizerIntent.EXTRA_MAX_RESULTS, 8)
             putExtra(RecognizerIntent.EXTRA_PARTIAL_RESULTS, false)
-            putExtra(RecognizerIntent.EXTRA_PREFER_OFFLINE, true)
         }
 
         runCatching { speechRecognizer?.startListening(intent) }
