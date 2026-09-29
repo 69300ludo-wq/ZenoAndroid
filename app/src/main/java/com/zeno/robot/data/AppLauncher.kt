@@ -1,5 +1,6 @@
 package com.zeno.robot.data
 
+import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
@@ -25,9 +26,23 @@ class AppLauncher(private val context: Context) {
 
     fun openByPackage(packageName: String): Boolean {
         return runCatching {
-            val launch = packageManager.getLaunchIntentForPackage(packageName) ?: return false
-            launch.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_RESET_TASK_IF_NEEDED)
-            context.startActivity(launch)
+            val direct = packageManager.getLaunchIntentForPackage(packageName)
+            if (direct != null) {
+                direct.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_RESET_TASK_IF_NEEDED)
+                context.startActivity(direct)
+                return true
+            }
+
+            val probe = Intent(Intent.ACTION_MAIN)
+                .addCategory(Intent.CATEGORY_LAUNCHER)
+                .setPackage(packageName)
+            val resolved = packageManager.queryIntentActivities(probe, PackageManager.MATCH_ALL).firstOrNull()
+                ?: return false
+            val explicit = Intent(Intent.ACTION_MAIN)
+                .addCategory(Intent.CATEGORY_LAUNCHER)
+                .setComponent(ComponentName(resolved.activityInfo.packageName, resolved.activityInfo.name))
+                .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_RESET_TASK_IF_NEEDED)
+            context.startActivity(explicit)
             true
         }.getOrDefault(false)
     }
@@ -41,32 +56,32 @@ class AppLauncher(private val context: Context) {
         }
 
         val apps = listLaunchableApps()
-        val exact = apps.firstOrNull { normalize(it.label) == target }
-        if (exact != null && openByPackage(exact.packageName)) return true
+        if (apps.isEmpty()) return false
 
-        val starts = apps.firstOrNull {
-            val label = normalize(it.label)
-            label.startsWith(target) || target.startsWith(label)
-        }
-        if (starts != null && openByPackage(starts.packageName)) return true
+        val scored = apps.map { app ->
+            app to score(target, normalize(app.label))
+        }.sortedByDescending { it.second }
 
-        val contains = apps.firstOrNull {
-            val label = normalize(it.label)
-            label.contains(target) || target.contains(label)
-        }
-        if (contains != null && openByPackage(contains.packageName)) return true
+        val best = scored.firstOrNull { it.second >= 55 }?.first ?: return false
+        return openByPackage(best.packageName)
+    }
+
+    private fun score(target: String, label: String): Int {
+        if (target == label) return 100
+        if (label.startsWith(target) || target.startsWith(label)) return 90
+        if (label.contains(target) || target.contains(label)) return 80
+
+        val compactTarget = target.replace(" ", "")
+        val compactLabel = label.replace(" ", "")
+        if (compactTarget == compactLabel) return 98
+        if (compactLabel.contains(compactTarget) || compactTarget.contains(compactLabel)) return 85
 
         val targetWords = target.split(' ').filter { it.length > 1 }.toSet()
-        val fuzzy = apps
-            .map { app ->
-                val labelWords = normalize(app.label).split(' ').filter { it.length > 1 }.toSet()
-                app to targetWords.intersect(labelWords).size
-            }
-            .filter { it.second > 0 }
-            .maxByOrNull { it.second }
-            ?.first
+        val labelWords = label.split(' ').filter { it.length > 1 }.toSet()
+        val common = targetWords.intersect(labelWords).size
+        if (common > 0) return 60 + (common * 5)
 
-        return fuzzy?.let { openByPackage(it.packageName) } ?: false
+        return 0
     }
 
     private fun cleanTarget(raw: String): String {
@@ -76,14 +91,16 @@ class AppLauncher(private val context: Context) {
 
         val prefixes = listOf(
             "l application ", "lapp ", "application ", "appli ",
+            "ouvre moi ", "ouvre ", "lance moi ", "lance ",
+            "demarre ", "demarre moi ", "va sur ",
             "le ", "la ", "les "
         )
         prefixes.firstOrNull { value.startsWith(it) }?.let { value = value.removePrefix(it).trim() }
 
         value = value
             .removeSuffix(" s il te plait")
-            .removeSuffix(" s'il te plait")
             .removeSuffix(" stp")
+            .removeSuffix(" merci")
             .trim()
 
         return aliases[value] ?: value
@@ -104,8 +121,14 @@ class AppLauncher(private val context: Context) {
     companion object {
         private val aliases = mapOf(
             "you tube" to "youtube",
+            "youtube musique" to "youtube music",
             "whats app" to "whatsapp",
+            "ouatsap" to "whatsapp",
             "snap" to "snapchat",
+            "snap chat" to "snapchat",
+            "insta" to "instagram",
+            "tik tok" to "tiktok",
+            "spot ify" to "spotify",
             "google chrome" to "chrome",
             "google map" to "maps",
             "google maps" to "maps",
