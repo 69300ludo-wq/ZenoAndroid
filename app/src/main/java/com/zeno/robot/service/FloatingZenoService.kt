@@ -210,7 +210,7 @@ class FloatingZenoService : Service() {
         }
 
         Toast.makeText(this, "Vous : $sentence", Toast.LENGTH_SHORT).show()
-        val reply = when (val result = brain.reply(sentence)) {
+        val reply = when (val result = brain.replyCandidates(candidates)) {
             is ZenoBrain.Result.Text -> result.text
             is ZenoBrain.Result.Action -> result.text
         }
@@ -246,8 +246,7 @@ class FloatingZenoService : Service() {
         putExtra(RecognizerIntent.EXTRA_LANGUAGE, "fr-FR")
         putExtra(RecognizerIntent.EXTRA_LANGUAGE_PREFERENCE, "fr-FR")
         putExtra(RecognizerIntent.EXTRA_PARTIAL_RESULTS, partial)
-        putExtra(RecognizerIntent.EXTRA_MAX_RESULTS, 5)
-        putExtra(RecognizerIntent.EXTRA_PREFER_OFFLINE, true)
+        putExtra(RecognizerIntent.EXTRA_MAX_RESULTS, 8)
     }
 
     private fun startWakeListening() {
