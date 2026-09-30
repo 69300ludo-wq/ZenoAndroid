@@ -1,11 +1,10 @@
 package com.zeno.robot
 
-import android.content.Context
 import android.content.Intent
+import android.os.Bundle
 import android.widget.ImageView
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import android.os.Bundle
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -68,17 +67,17 @@ private fun ZenoGalaxyLauncher() {
             drawerState = drawerState,
             drawerContent = {
                 ModalDrawerSheet(
-                    drawerContainerColor = Color(0xFF06101F),
+                    drawerContainerColor = Color(0xFF05101F),
                     drawerContentColor = Color.White,
-                    modifier = Modifier.width(300.dp)
+                    modifier = Modifier.width(304.dp)
                 ) {
-                    Spacer(Modifier.height(22.dp))
+                    Spacer(Modifier.height(20.dp))
                     Row(
-                        Modifier.padding(horizontal = 20.dp, vertical = 12.dp),
+                        Modifier.padding(horizontal = 18.dp, vertical = 12.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Surface(
-                            modifier = Modifier.size(52.dp),
+                            modifier = Modifier.size(58.dp),
                             shape = CircleShape,
                             color = accent.copy(alpha = .16f),
                             border = BorderStroke(1.dp, accent.copy(alpha = .75f))
@@ -92,59 +91,49 @@ private fun ZenoGalaxyLauncher() {
                         }
                         Spacer(Modifier.width(12.dp))
                         Column {
-                            Text("ZENO", color = accent, fontWeight = FontWeight.Black, fontSize = 22.sp, letterSpacing = 2.sp)
-                            Text("GALAXY LAUNCHER", color = Color(0xFF91A9C9), fontSize = 11.sp, letterSpacing = 1.sp)
+                            Text("ZENO", color = accent, fontWeight = FontWeight.Black, fontSize = 24.sp, letterSpacing = 2.4.sp)
+                            Text("ASSISTANT GALAXY", color = Color(0xFF91A9C9), fontSize = 10.sp, letterSpacing = 1.2.sp)
+                            Text("Version 1.1.8", color = Color.White.copy(alpha = .50f), fontSize = 10.sp)
                         }
                     }
                     HorizontalDivider(color = Color.White.copy(alpha = .08f))
                     Spacer(Modifier.height(8.dp))
-                    NavigationDrawerItem(
-                        label = { Text("Accueil Zeno") },
-                        selected = page == LauncherPage.HOME,
-                        icon = { Icon(Icons.Default.Home, null) },
-                        onClick = { page = LauncherPage.HOME; scope.launch { drawerState.close() } },
-                        modifier = Modifier.padding(horizontal = 10.dp)
-                    )
-                    NavigationDrawerItem(
-                        label = { Text("Mes applications") },
-                        selected = page == LauncherPage.APPS,
-                        icon = { Icon(Icons.Default.Apps, null) },
-                        onClick = { page = LauncherPage.APPS; scope.launch { drawerState.close() } },
-                        modifier = Modifier.padding(horizontal = 10.dp)
-                    )
-                    NavigationDrawerItem(
-                        label = { Text("Parler à Zeno") },
-                        selected = false,
-                        icon = { Icon(Icons.Default.Mic, null) },
-                        onClick = { context.startActivity(Intent(context, VoiceCommandActivity::class.java)); scope.launch { drawerState.close() } },
-                        modifier = Modifier.padding(horizontal = 10.dp)
-                    )
-                    NavigationDrawerItem(
-                        label = { Text("Zeno flottant") },
-                        selected = false,
-                        icon = { Icon(Icons.Default.SmartToy, null) },
-                        onClick = { context.startActivity(Intent(context, SetupActivity::class.java)); scope.launch { drawerState.close() } },
-                        modifier = Modifier.padding(horizontal = 10.dp)
-                    )
-                    NavigationDrawerItem(
-                        label = { Text("Zeno complet") },
-                        selected = false,
-                        icon = { Icon(Icons.Default.Bolt, null) },
-                        onClick = { context.startActivity(Intent(context, MainActivity::class.java)); scope.launch { drawerState.close() } },
-                        modifier = Modifier.padding(horizontal = 10.dp)
-                    )
+                    DrawerItem(Icons.Default.Home, "Accueil Zeno", page == LauncherPage.HOME) {
+                        page = LauncherPage.HOME
+                        scope.launch { drawerState.close() }
+                    }
+                    DrawerItem(Icons.Default.Apps, "Mes applications", page == LauncherPage.APPS) {
+                        page = LauncherPage.APPS
+                        scope.launch { drawerState.close() }
+                    }
+                    DrawerItem(Icons.Default.Mic, "Parler à Zeno", false) {
+                        context.startActivity(Intent(context, VoiceCommandActivity::class.java))
+                        scope.launch { drawerState.close() }
+                    }
+                    DrawerItem(Icons.Default.SmartToy, "Zeno flottant", false) {
+                        context.startActivity(Intent(context, SetupActivity::class.java))
+                        scope.launch { drawerState.close() }
+                    }
+                    DrawerItem(Icons.Default.Bolt, "Zeno complet", false) {
+                        context.startActivity(Intent(context, MainActivity::class.java))
+                        scope.launch { drawerState.close() }
+                    }
                     Spacer(Modifier.weight(1f))
                     Surface(
-                        color = accent.copy(alpha = .10f),
-                        shape = RoundedCornerShape(16.dp),
+                        color = Color(0xFF0A1930),
+                        shape = RoundedCornerShape(18.dp),
                         border = BorderStroke(1.dp, accent.copy(alpha = .35f)),
                         modifier = Modifier.padding(16.dp).fillMaxWidth()
                     ) {
                         Column(Modifier.padding(14.dp)) {
                             Text("THÈME ACTIF", color = Color(0xFF8EA8CC), fontSize = 10.sp, letterSpacing = 1.4.sp)
-                            Spacer(Modifier.height(4.dp))
-                            Text("ZENO GALAXY", color = accent, fontWeight = FontWeight.Bold)
-                            Text("Cyan • Violet • Spatial", color = Color.White.copy(alpha = .70f), fontSize = 12.sp)
+                            Spacer(Modifier.height(5.dp))
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Box(Modifier.size(10.dp).background(accent, CircleShape))
+                                Spacer(Modifier.width(8.dp))
+                                Text("ZENO GALAXY", color = Color.White, fontWeight = FontWeight.Bold)
+                            }
+                            Text("Spatial • Cyan • Violet", color = Color.White.copy(alpha = .58f), fontSize = 11.sp)
                         }
                     }
                 }
@@ -160,8 +149,8 @@ private fun ZenoGalaxyLauncher() {
                     )
                     .background(
                         Brush.radialGradient(
-                            listOf(accent.copy(alpha = .20f), Color(0x222A57FF), Color.Transparent),
-                            radius = 950f
+                            listOf(accent.copy(alpha = .18f), Color(0x223E38FF), Color.Transparent),
+                            radius = 980f
                         )
                     )
             ) {
@@ -186,6 +175,17 @@ private fun ZenoGalaxyLauncher() {
 }
 
 @Composable
+private fun DrawerItem(icon: androidx.compose.ui.graphics.vector.ImageVector, label: String, selected: Boolean, onClick: () -> Unit) {
+    NavigationDrawerItem(
+        label = { Text(label) },
+        selected = selected,
+        icon = { Icon(icon, null) },
+        onClick = onClick,
+        modifier = Modifier.padding(horizontal = 10.dp, vertical = 2.dp)
+    )
+}
+
+@Composable
 private fun LauncherHome(
     accent: Color,
     openMenu: () -> Unit,
@@ -195,117 +195,139 @@ private fun LauncherHome(
     floating: () -> Unit
 ) {
     LazyColumn(
-        modifier = Modifier.fillMaxSize().padding(horizontal = 18.dp),
+        modifier = Modifier.fillMaxSize().padding(horizontal = 16.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
-        contentPadding = PaddingValues(top = 12.dp, bottom = 30.dp)
+        contentPadding = PaddingValues(top = 10.dp, bottom = 28.dp)
     ) {
         item {
             Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                IconButton(onClick = openMenu) {
-                    Icon(Icons.Default.Menu, contentDescription = "Menu", tint = Color.White)
+                Surface(
+                    shape = RoundedCornerShape(15.dp),
+                    color = Color(0x8A08152A),
+                    border = BorderStroke(1.dp, accent.copy(alpha = .28f))
+                ) {
+                    IconButton(onClick = openMenu) {
+                        Icon(Icons.Default.Menu, contentDescription = "Menu", tint = Color.White)
+                    }
                 }
+                Spacer(Modifier.width(12.dp))
                 Column(Modifier.weight(1f)) {
-                    Text("ZENO", color = accent, fontWeight = FontWeight.Black, fontSize = 26.sp, letterSpacing = 3.sp)
-                    Text("GALAXY LAUNCHER", color = Color(0xFF8EA8CC), fontSize = 10.sp, letterSpacing = 2.sp)
+                    Text("ZENO", color = Color.White, fontWeight = FontWeight.Black, fontSize = 28.sp, letterSpacing = 3.5.sp)
+                    Text("VOTRE ASSISTANT IA", color = accent, fontSize = 10.sp, letterSpacing = 2.2.sp, fontWeight = FontWeight.Bold)
                 }
-                Surface(shape = CircleShape, color = Color(0x3316FFB1)) {
-                    Text("● EN LIGNE", color = Color(0xFF72FFC8), fontSize = 9.sp, fontWeight = FontWeight.Bold, modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp))
+                Surface(shape = CircleShape, color = Color(0x3316FFB1), border = BorderStroke(1.dp, Color(0x5572FFC8))) {
+                    Text("● PRÊT", color = Color(0xFF72FFC8), fontSize = 9.sp, fontWeight = FontWeight.Bold, modifier = Modifier.padding(horizontal = 10.dp, vertical = 7.dp))
                 }
             }
 
-            Spacer(Modifier.height(8.dp))
-            Box(contentAlignment = Alignment.Center, modifier = Modifier.fillMaxWidth().height(345.dp)) {
-                Box(
-                    Modifier.size(330.dp).background(
-                        Brush.radialGradient(listOf(accent.copy(alpha = .34f), Color(0x333B5CFF), Color.Transparent)),
-                        CircleShape
-                    )
-                )
-                Image(
-                    painter = painterResource(R.drawable.zeno_robot),
-                    contentDescription = "Zeno",
-                    modifier = Modifier.size(315.dp),
-                    contentScale = ContentScale.Fit
-                )
-            }
-
-            Text("TON UNIVERS. TON ZENO.", color = Color.White, fontWeight = FontWeight.Black, fontSize = 25.sp, textAlign = TextAlign.Center)
             Spacer(Modifier.height(6.dp))
+            Surface(
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(28.dp),
+                color = Color(0x66061328),
+                border = BorderStroke(1.dp, accent.copy(alpha = .30f))
+            ) {
+                Box(contentAlignment = Alignment.Center, modifier = Modifier.fillMaxWidth().height(360.dp)) {
+                    Box(
+                        Modifier.size(340.dp).background(
+                            Brush.radialGradient(
+                                listOf(accent.copy(alpha = .38f), Color(0x443F47FF), Color(0x1100C8FF), Color.Transparent)
+                            ),
+                            CircleShape
+                        )
+                    )
+                    Image(
+                        painter = painterResource(R.drawable.zeno_robot),
+                        contentDescription = "Zeno",
+                        modifier = Modifier.size(328.dp),
+                        contentScale = ContentScale.Fit
+                    )
+                    Surface(
+                        modifier = Modifier.align(Alignment.BottomCenter).padding(bottom = 14.dp),
+                        shape = RoundedCornerShape(14.dp),
+                        color = Color(0xC2071328),
+                        border = BorderStroke(1.dp, accent.copy(alpha = .35f))
+                    ) {
+                        Row(Modifier.padding(horizontal = 14.dp, vertical = 8.dp), verticalAlignment = Alignment.CenterVertically) {
+                            Icon(Icons.Default.GraphicEq, null, tint = accent, modifier = Modifier.size(18.dp))
+                            Spacer(Modifier.width(8.dp))
+                            Text("Dis : « Salut Zeno »", color = Color.White, fontWeight = FontWeight.SemiBold, fontSize = 12.sp)
+                        }
+                    }
+                }
+            }
+
+            Spacer(Modifier.height(14.dp))
+            Text("TOUJOURS AVEC VOUS", color = Color.White, fontWeight = FontWeight.Black, fontSize = 22.sp, textAlign = TextAlign.Center, letterSpacing = 1.1.sp)
             Text(
-                "Parle à Zeno, ouvre tes applications et garde toutes les fonctions de ton assistant au même endroit.",
-                color = Color(0xFFAAC0E1),
-                fontSize = 14.sp,
-                lineHeight = 20.sp,
+                "Parle à Zeno, ouvre tes applis et retrouve toutes les fonctions de ton assistant depuis un seul écran.",
+                color = Color(0xFFA9BFDF),
+                fontSize = 13.sp,
+                lineHeight = 19.sp,
                 textAlign = TextAlign.Center,
-                modifier = Modifier.padding(horizontal = 10.dp)
+                modifier = Modifier.padding(horizontal = 10.dp, vertical = 7.dp)
             )
-            Spacer(Modifier.height(16.dp))
+            Spacer(Modifier.height(10.dp))
 
             Button(
                 onClick = speak,
-                modifier = Modifier.fillMaxWidth().height(60.dp),
+                modifier = Modifier.fillMaxWidth().height(62.dp),
                 shape = RoundedCornerShape(18.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = accent, contentColor = Color(0xFF00131A))
+                colors = ButtonDefaults.buttonColors(containerColor = accent, contentColor = Color(0xFF00131A)),
+                border = BorderStroke(1.dp, Color.White.copy(alpha = .18f))
             ) {
-                Icon(Icons.Default.Mic, null)
+                Icon(Icons.Default.ChatBubble, null)
                 Spacer(Modifier.width(10.dp))
-                Text("PARLER À ZENO", fontWeight = FontWeight.Black, fontSize = 16.sp)
+                Text("PARLER À ZENO", fontWeight = FontWeight.Black, fontSize = 17.sp, letterSpacing = .5.sp)
             }
-            Spacer(Modifier.height(10.dp))
-            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                OutlinedButton(
-                    onClick = openApps,
-                    modifier = Modifier.weight(1f).height(54.dp),
-                    shape = RoundedCornerShape(16.dp),
-                    border = BorderStroke(1.dp, accent.copy(alpha = .65f))
-                ) {
-                    Icon(Icons.Default.Apps, null, tint = accent)
-                    Spacer(Modifier.width(7.dp))
-                    Text("APPLIS", color = Color.White, fontWeight = FontWeight.Bold)
-                }
-                OutlinedButton(
-                    onClick = floating,
-                    modifier = Modifier.weight(1f).height(54.dp),
-                    shape = RoundedCornerShape(16.dp),
-                    border = BorderStroke(1.dp, Color(0xFF9B6CFF).copy(alpha = .75f))
-                ) {
-                    Icon(Icons.Default.SmartToy, null, tint = Color(0xFFB999FF))
-                    Spacer(Modifier.width(7.dp))
-                    Text("FLOTTANT", color = Color.White, fontWeight = FontWeight.Bold)
-                }
-            }
-            Spacer(Modifier.height(20.dp))
-            Text("MENU ZENO", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 16.sp, modifier = Modifier.fillMaxWidth())
-            Spacer(Modifier.height(10.dp))
+            Spacer(Modifier.height(14.dp))
         }
 
         item {
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(9.dp)) {
+                HomeShortcut(Icons.Default.Apps, "Mes applis", accent, Modifier.weight(1f), openApps)
+                HomeShortcut(Icons.Default.SmartToy, "Zeno flottant", Color(0xFF9B6CFF), Modifier.weight(1f), floating)
+                HomeShortcut(Icons.Default.Bolt, "Zeno complet", accent, Modifier.weight(1f), openZeno)
+                HomeShortcut(Icons.Default.Menu, "Menu", Color(0xFF9B6CFF), Modifier.weight(1f), openMenu)
+            }
+            Spacer(Modifier.height(18.dp))
+            Text("ACCÈS RAPIDE", color = Color.White, fontWeight = FontWeight.Black, fontSize = 15.sp, modifier = Modifier.fillMaxWidth(), letterSpacing = 1.sp)
+            Spacer(Modifier.height(9.dp))
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                LauncherCard(Icons.Default.Apps, "Mes applis", "Launcher", accent, Modifier.weight(1f), openApps)
-                LauncherCard(Icons.Default.Chat, "Chat IA", "Zeno complet", accent, Modifier.weight(1f), openZeno)
+                LauncherCard(Icons.Default.Chat, "Chat IA", "Dans Zeno complet", accent, Modifier.weight(1f), openZeno)
+                LauncherCard(Icons.Default.Translate, "Traduction", "Français ↔ Anglais", Color(0xFF9B6CFF), Modifier.weight(1f), openZeno)
             }
             Spacer(Modifier.height(10.dp))
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                LauncherCard(Icons.Default.Translate, "Traduction", "Zeno complet", Color(0xFF9B6CFF), Modifier.weight(1f), openZeno)
-                LauncherCard(Icons.Default.Public, "Recherche web", "Zeno complet", Color(0xFF9B6CFF), Modifier.weight(1f), openZeno)
+                LauncherCard(Icons.Default.Public, "Recherche web", "Recherche avec Zeno", accent, Modifier.weight(1f), openZeno)
+                LauncherCard(Icons.Default.Palette, "Personnalisation", "Thèmes et icône", Color(0xFF9B6CFF), Modifier.weight(1f), openZeno)
             }
-            Spacer(Modifier.height(10.dp))
-            Surface(
-                modifier = Modifier.fillMaxWidth().clickable(onClick = openZeno),
-                shape = RoundedCornerShape(18.dp),
-                color = Color(0xB30A1831),
-                border = BorderStroke(1.dp, accent.copy(alpha = .30f))
-            ) {
-                Row(Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
-                    Icon(Icons.Default.Bolt, null, tint = accent)
-                    Spacer(Modifier.width(12.dp))
-                    Column(Modifier.weight(1f)) {
-                        Text("OUVRIR ZENO COMPLET", color = Color.White, fontWeight = FontWeight.Bold)
-                        Text("Chat, traduction, web, personnalisation, communauté et réglages", color = Color(0xFF8EA8CC), fontSize = 12.sp)
-                    }
-                    Icon(Icons.Default.ChevronRight, null, tint = Color.White.copy(alpha = .55f))
-                }
-            }
+        }
+    }
+}
+
+@Composable
+private fun HomeShortcut(
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    label: String,
+    tint: Color,
+    modifier: Modifier,
+    onClick: () -> Unit
+) {
+    Surface(
+        modifier = modifier.height(88.dp).clickable(onClick = onClick),
+        shape = RoundedCornerShape(17.dp),
+        color = Color(0xB308172E),
+        border = BorderStroke(1.dp, tint.copy(alpha = .42f))
+    ) {
+        Column(
+            modifier = Modifier.padding(horizontal = 6.dp, vertical = 10.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center
+        ) {
+            Icon(icon, null, tint = tint, modifier = Modifier.size(24.dp))
+            Spacer(Modifier.height(7.dp))
+            Text(label, color = Color.White, fontSize = 9.sp, fontWeight = FontWeight.Bold, textAlign = TextAlign.Center, maxLines = 2)
         }
     }
 }
@@ -327,9 +349,9 @@ private fun LauncherCard(
     ) {
         Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.Center) {
             Icon(icon, null, tint = tint)
-            Spacer(Modifier.height(9.dp))
-            Text(title, color = Color.White, fontWeight = FontWeight.Bold)
-            Text(subtitle, color = Color(0xFF829DC3), fontSize = 10.sp)
+            Spacer(Modifier.height(8.dp))
+            Text(title, color = Color.White, fontWeight = FontWeight.Bold, fontSize = 13.sp)
+            Text(subtitle, color = Color(0xFF829DC3), fontSize = 10.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
         }
     }
 }
@@ -355,8 +377,8 @@ private fun LauncherApps(accent: Color, openMenu: () -> Unit, back: () -> Unit) 
             IconButton(onClick = openMenu) { Icon(Icons.Default.Menu, "Menu", tint = Color.White) }
             IconButton(onClick = back) { Icon(Icons.Default.ArrowBack, "Retour", tint = accent) }
             Column(Modifier.weight(1f)) {
-                Text("APPLICATIONS", color = Color.White, fontWeight = FontWeight.Black, fontSize = 21.sp)
-                Text("ZENO GALAXY LAUNCHER", color = Color(0xFF829DC3), fontSize = 10.sp, letterSpacing = 1.3.sp)
+                Text("MES APPLICATIONS", color = Color.White, fontWeight = FontWeight.Black, fontSize = 21.sp)
+                Text("ZENO GALAXY", color = accent, fontSize = 10.sp, letterSpacing = 1.5.sp, fontWeight = FontWeight.Bold)
             }
         }
         OutlinedTextField(
