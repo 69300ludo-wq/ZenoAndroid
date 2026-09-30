@@ -106,7 +106,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v6
         with:
-          name: Zeno-v1.3.7-flottant-mono-micro
+          name: Zeno-v1.3.8-toucher-flottant
           path: |
             app/build/outputs/apk/debug/app-debug.apk
             app/build/reports/lint-results-debug.html
