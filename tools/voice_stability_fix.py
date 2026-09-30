@@ -39,8 +39,8 @@ new = '''        brain = ZenoBrain(applicationContext)
         if (SpeechRecognizer.isRecognitionAvailable(this)) {
             if (Settings.canDrawOverlays(this)) showBubble()
             prepareSpeechRecognizer()
-            // Démarre presque immédiatement pour réduire le délai après activation du service.
-            handler.postDelayed({ startWakeListening() }, 350)
+            // Écoute quasi immédiate dès que le service Zeno est actif.
+            handler.postDelayed({ startWakeListening() }, 150)
         }
 '''
 if old not in service:
@@ -69,13 +69,11 @@ old = '''                    if (System.currentTimeMillis() >= pauseWakeUntil) {
                     }
 '''
 new = '''                    if (System.currentTimeMillis() >= pauseWakeUntil) {
-                        // Relance plus vite l'écoute tout en laissant un petit délai au moteur
-                        // lorsqu'il signale qu'il est encore occupé.
                         val delay = when (error) {
-                            SpeechRecognizer.ERROR_RECOGNIZER_BUSY, SpeechRecognizer.ERROR_CLIENT -> 900L
+                            SpeechRecognizer.ERROR_RECOGNIZER_BUSY, SpeechRecognizer.ERROR_CLIENT -> 700L
                             SpeechRecognizer.ERROR_INSUFFICIENT_PERMISSIONS -> 4000L
-                            SpeechRecognizer.ERROR_AUDIO -> 700L
-                            else -> 350L
+                            SpeechRecognizer.ERROR_AUDIO -> 500L
+                            else -> 220L
                         }
                         handler.removeCallbacksAndMessages(null)
                         handler.postDelayed({
@@ -103,26 +101,36 @@ new = '''        runCatching { speechRecognizer?.startListening(recognitionInten
                 handler.postDelayed({
                     prepareSpeechRecognizer()
                     startWakeListening()
-                }, 650)
+                }, 500)
             }
 '''
 if old not in service:
     raise SystemExit('startWakeListening introuvable')
 service = service.replace(old, new, 1)
 
-# Si une écoute se termine sans la phrase de réveil, repartir rapidement.
+# Si une écoute se termine sans la phrase de réveil, repartir presque tout de suite.
 service = service.replace(
     'handler.postDelayed({ startWakeListening() }, 450)',
-    'handler.postDelayed({ startWakeListening() }, 220)',
+    'handler.postDelayed({ startWakeListening() }, 100)',
     1
 )
 
-# Après le réveil, ouvrir l'écoute de la commande plus rapidement.
-service = service.replace(
-    'handler.postDelayed({ beginCommandListening() }, 250)',
-    'handler.postDelayed({ beginCommandListening() }, 120)',
-    1
-)
+# Déclenchement direct : dès que la phrase est reconnue, Zeno s'ouvre et écoute la commande.
+# On retire la réponse « Oui, je t’écoute » avant l'écoute, car elle ajoutait environ 1,3 s
+# et pouvait être réentendue par le micro. Zeno garde sa voix pour répondre aux commandes.
+old_trigger = '''        openZeno()
+        speak("Oui, je t'écoute") {
+            wakeTriggered = false
+            handler.postDelayed({ beginCommandListening() }, 250)
+        }
+'''
+new_trigger = '''        openZeno()
+        wakeTriggered = false
+        handler.postDelayed({ beginCommandListening() }, 50)
+'''
+if old_trigger not in service:
+    raise SystemExit('Bloc de déclenchement vocal introuvable')
+service = service.replace(old_trigger, new_trigger, 1)
 
 old = '''    private fun createRecognizer(): SpeechRecognizer {
         return if (
@@ -183,4 +191,4 @@ main = main.replace(old, new, 1)
 SERVICE.write_text(service, encoding='utf-8')
 VOICE.write_text(voice, encoding='utf-8')
 MAIN.write_text(main, encoding='utf-8')
-print('Stabilité conservée et détection vocale accélérée')
+print('Détection vocale rapide et déclenchement direct activés')
