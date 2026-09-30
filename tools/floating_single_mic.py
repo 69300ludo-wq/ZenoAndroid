@@ -5,16 +5,26 @@ SERVICE = Path('app/src/main/java/com/zeno/robot/service/FloatingZenoService.kt'
 s = SERVICE.read_text(encoding='utf-8')
 
 # Le point flottant et la phrase "Salut Zeno" utilisent le même SpeechRecognizer.
-# Le clic appelle directement le mode commande : pas de seconde activité vocale.
-if 'view.setOnClickListener { openReliableVoiceCommand() }' in s:
-    s = s.replace(
-        'view.setOnClickListener { openReliableVoiceCommand() }',
-        'view.setOnClickListener { beginFloatingCommand() }',
-        1,
-    )
-elif 'view.setOnClickListener { beginFloatingCommand() }' not in s:
-    # Certaines variantes n'ont pas de listener explicite : le ACTION_UP ci-dessous suffit.
-    pass
+# On garde performClick() pour l'accessibilité Android, mais il appelle directement
+# le mode commande du service (aucune seconde activité vocale).
+view_click_old = '''val view = object : View(this) {
+            override fun performClick(): Boolean = super.performClick()
+        }.apply {
+'''
+view_click_new = '''val view = object : View(this) {
+            override fun performClick(): Boolean {
+                super.performClick()
+                beginFloatingCommand()
+                return true
+            }
+        }.apply {
+'''
+if view_click_old in s:
+    s = s.replace(view_click_old, view_click_new, 1)
+
+# Le listener ajouté par quality_cleanup serait sinon un deuxième appel au clic.
+s = s.replace('        view.setOnClickListener { openReliableVoiceCommand() }\n', '', 1)
+s = s.replace('        view.setOnClickListener { beginFloatingCommand() }\n', '', 1)
 
 # Zone tactile plus grande sans agrandir visuellement le point lumineux.
 # Le point visible reste environ 26dp mais la fenêtre tactile fait 56dp.
@@ -51,27 +61,41 @@ new_bg = '''            background = android.graphics.drawable.InsetDrawable(
 if old_bg in s:
     s = s.replace(old_bg, new_bg, 1)
 
-# Appel direct au relâchement du doigt. On ne dépend plus de performClick(), qui peut
-# être absorbé par le gestionnaire de déplacement sur certains appareils/OEM.
+# Au relâchement du doigt, performClick() exécute la commande. Cela respecte aussi
+# les services d'accessibilité et évite le faux positif lint ClickableViewAccessibility.
 old_action = '''                    if (moved < 18f * resources.displayMetrics.density) {
                         if (duration >= 650) view.performLongClick() else view.performClick()
                     }
                     true
 '''
 new_action = '''                    if (moved < 22f * resources.displayMetrics.density) {
-                        if (duration >= 650) openZeno() else beginFloatingCommand()
+                        if (duration >= 650) openZeno() else view.performClick()
                     }
                     true
 '''
 if old_action in s:
     s = s.replace(old_action, new_action, 1)
+elif '''                    if (moved < 22f * resources.displayMetrics.density) {
+                        if (duration >= 650) openZeno() else beginFloatingCommand()
+                    }
+                    true
+''' in s:
+    s = s.replace(
+        '''                    if (moved < 22f * resources.displayMetrics.density) {
+                        if (duration >= 650) openZeno() else beginFloatingCommand()
+                    }
+                    true
+''',
+        new_action,
+        1,
+    )
 elif 'if (duration >= 650) openZeno() else openReliableVoiceCommand()' in s:
     s = s.replace(
         'if (duration >= 650) openZeno() else openReliableVoiceCommand()',
-        'if (duration >= 650) openZeno() else beginFloatingCommand()',
+        'if (duration >= 650) openZeno() else view.performClick()',
         1,
     )
-elif 'if (duration >= 650) openZeno() else beginFloatingCommand()' not in s:
+elif 'if (duration >= 650) openZeno() else view.performClick()' not in s:
     raise SystemExit('Gestion du toucher du point flottant introuvable')
 
 # Champ de transition : empêche onError() de relancer l'écoute du mot de réveil
@@ -82,8 +106,8 @@ if 'private var commandTransition = false' not in s:
         raise SystemExit('Champ pauseWakeUntil introuvable')
     s = s.replace(field_anchor, field_anchor + '    private var commandTransition = false\n', 1)
 
-# Pendant une transition vers la commande, ERROR_CLIENT/annulation est normal et ne
-# doit pas relancer une deuxième écoute concurrente.
+# Pendant une transition vers la commande, l'annulation de l'écoute du mot de réveil
+# est normale et ne doit pas relancer une deuxième écoute concurrente.
 error_anchor = '''                override fun onError(error: Int) {
                     listening = false
                     setBubbleListening(false)
@@ -135,7 +159,6 @@ replacement = '''    private fun beginFloatingCommand() {
     private fun setBubbleListening(active: Boolean) {'''
 s, count = pattern.subn(replacement, s, count=1)
 if count != 1:
-    # Le script peut être rejoué sur une source déjà transformée lors d'un test local.
     if 'private fun beginFloatingCommand()' not in s:
         raise SystemExit('Ancien chemin VoiceCommandActivity du flottant introuvable')
 
@@ -171,4 +194,4 @@ if trigger_count != 1:
 s = s.replace('import com.zeno.robot.VoiceCommandActivity\n', '')
 
 SERVICE.write_text(s, encoding='utf-8')
-print('Toucher flottant fiabilisé : grande zone tactile, appel direct et transition mono-micro protégée')
+print('Toucher flottant corrigé : zone tactile 56dp, performClick fiable et transition mono-micro protégée')
