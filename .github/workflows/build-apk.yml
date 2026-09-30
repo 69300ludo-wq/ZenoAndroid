@@ -88,6 +88,8 @@ jobs:
         run: python3 tools/smart_commands.py
       - name: Correctif final anti-plantage
         run: python3 tools/final_runtime_stability.py
+      - name: Corriger conflit micro et enregistrement
+        run: python3 tools/voice_runtime_coordination.py
       - name: Build debug APK
         run: ./gradlew assembleDebug
       - name: Upload APK
