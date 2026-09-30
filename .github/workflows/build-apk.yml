@@ -100,6 +100,8 @@ jobs:
         run: python3 tools/fixed_wake_phrase.py
       - name: Supprimer le flottant et ajouter le rond personnalisable
         run: python3 tools/floating_single_mic.py
+      - name: Nettoyer le lint du vocal direct
+        run: python3 tools/direct_voice_lint_fix.py
       - name: Vérifier et compiler APK
         run: ./gradlew lintDebug assembleDebug
       - name: Upload ZIP APK et rapport
