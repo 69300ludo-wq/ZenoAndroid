@@ -31,6 +31,62 @@ jobs:
           sed -i '0,/    chat,/s//    lambda _: chat,/' tools/fix_micro.py
           python3 tools/fix_micro.py
 
+      - name: Ajouter le bouton vocal sur l'accueil
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p = Path('app/src/main/java/com/zeno/robot/MainActivity.kt')
+          s = p.read_text(encoding='utf-8')
+          needle = '''                Row(
+                              Modifier.fillMaxWidth().padding(top = 16.dp),
+                              horizontalArrangement = Arrangement.Center,
+                              verticalAlignment = Alignment.CenterVertically
+                          ) {
+                              Text(
+                                  "Paramètres",'''
+          replacement = '''                Spacer(Modifier.height(14.dp))
+                          Row(
+                              Modifier.fillMaxWidth(),
+                              horizontalArrangement = Arrangement.Center
+                          ) {
+                              Surface(
+                                  modifier = Modifier.size(68.dp).clickable {
+                                      context.startActivity(Intent(context, VoiceCommandActivity::class.java))
+                                  },
+                                  shape = CircleShape,
+                                  color = accent.copy(alpha = .24f),
+                                  border = androidx.compose.foundation.BorderStroke(2.dp, Color(0xFF59D8FF))
+                              ) {
+                                  Box(contentAlignment = Alignment.Center) {
+                                      Icon(
+                                          Icons.Default.Mic,
+                                          contentDescription = "Lancer le vocal Zeno",
+                                          tint = Color.White,
+                                          modifier = Modifier.size(34.dp)
+                                      )
+                                  }
+                              }
+                          }
+                          Text(
+                              "Parler à Zeno",
+                              color = Color(0xFFBFD7FF),
+                              fontSize = 12.sp,
+                              textAlign = TextAlign.Center,
+                              modifier = Modifier.fillMaxWidth().padding(top = 6.dp)
+                          )
+                          Row(
+                              Modifier.fillMaxWidth().padding(top = 12.dp),
+                              horizontalArrangement = Arrangement.Center,
+                              verticalAlignment = Alignment.CenterVertically
+                          ) {
+                              Text(
+                                  "Paramètres",'''
+          if needle not in s:
+              raise SystemExit("Emplacement du bouton vocal introuvable")
+          p.write_text(s.replace(needle, replacement, 1), encoding='utf-8')
+          print("Bouton vocal d'accueil ajouté")
+          PY
+
       - name: Build debug APK
         run: ./gradlew assembleDebug
 
