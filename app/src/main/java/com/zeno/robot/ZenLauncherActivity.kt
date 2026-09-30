@@ -54,7 +54,7 @@ class ZenLauncherActivity : ComponentActivity() {
         window.statusBarColor = AndroidColor.TRANSPARENT
         window.navigationBarColor = AndroidColor.TRANSPARENT
         WindowCompat.setDecorFitsSystemWindows(window, false)
-        setContent { ZenLauncher(homePulse.intValue) }
+        setContent { ZenoLauncher(homePulse.intValue) }
     }
 
     override fun onNewIntent(intent: Intent) {
@@ -64,13 +64,13 @@ class ZenLauncherActivity : ComponentActivity() {
     }
 }
 
-private enum class ZenLauncherPage { HOME, DRAWER }
+private enum class ZenoLauncherPage { HOME, DRAWER }
 
 @Composable
-private fun ZenLauncher(homePulse: Int) {
+private fun ZenoLauncher(homePulse: Int) {
     val context = LocalContext.current
     val prefs = remember { LauncherPreferences(context.applicationContext) }
-    var page by remember { mutableStateOf(ZenLauncherPage.HOME) }
+    var page by remember { mutableStateOf(ZenoLauncherPage.HOME) }
     var settings by remember { mutableStateOf(prefs.loadHomeSettings()) }
 
     fun save(value: HomeSettings) {
@@ -78,31 +78,31 @@ private fun ZenLauncher(homePulse: Int) {
         prefs.saveHomeSettings(value)
     }
 
-    LaunchedEffect(homePulse) { page = ZenLauncherPage.HOME }
-    BackHandler(enabled = page == ZenLauncherPage.DRAWER) { page = ZenLauncherPage.HOME }
+    LaunchedEffect(homePulse) { page = ZenoLauncherPage.HOME }
+    BackHandler(enabled = page == ZenoLauncherPage.DRAWER) { page = ZenoLauncherPage.HOME }
 
     MaterialTheme(
         colorScheme = darkColorScheme(
-            primary = Color.White,
+            primary = Color(0xFF76D9FF),
             background = Color.Transparent,
             surface = Color(0xF21A1C20)
         )
     ) {
         when (page) {
-            ZenLauncherPage.HOME -> ZenHome(
+            ZenoLauncherPage.HOME -> ZenoHome(
                 settings = settings,
                 onSettingsChange = ::save,
-                openDrawer = { page = ZenLauncherPage.DRAWER }
+                openDrawer = { page = ZenoLauncherPage.DRAWER }
             )
-            ZenLauncherPage.DRAWER -> ZenDrawer(
-                backHome = { page = ZenLauncherPage.HOME }
+            ZenoLauncherPage.DRAWER -> ZenoDrawer(
+                backHome = { page = ZenoLauncherPage.HOME }
             )
         }
     }
 }
 
 @Composable
-private fun ZenHome(
+private fun ZenoHome(
     settings: HomeSettings,
     onSettingsChange: (HomeSettings) -> Unit,
     openDrawer: () -> Unit
@@ -122,7 +122,7 @@ private fun ZenHome(
 
     val byPackage = remember(apps) { apps.associateBy { it.packageName } }
     val homeApps = remember(apps, settings.homePackages) {
-        settings.homePackages.mapNotNull { byPackage[it] }.take(16)
+        settings.homePackages.mapNotNull { byPackage[it] }
     }
 
     fun reorder(source: InstalledApp) {
@@ -153,39 +153,60 @@ private fun ZenHome(
                 .windowInsetsPadding(WindowInsets.systemBars)
                 .padding(horizontal = 12.dp)
         ) {
-            Spacer(Modifier.height(18.dp))
+            Spacer(Modifier.height(12.dp))
 
-            homeApps.chunked(4).forEach { row ->
-                Row(
-                    Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceEvenly
+            if (homeApps.isEmpty()) {
+                Box(
+                    Modifier
+                        .weight(1f)
+                        .fillMaxWidth(),
+                    contentAlignment = Alignment.Center
                 ) {
-                    row.forEach { app ->
-                        ZenHomeIcon(
-                            app = app,
-                            modifier = Modifier
-                                .weight(1f)
-                                .onGloballyPositioned { iconBounds[app.packageName] = it.boundsInRoot() },
-                            onOpen = { launcher.openByPackage(app.packageName) },
-                            onDragStart = {
-                                dragging = app
-                                dragPosition = iconBounds[app.packageName]?.center ?: Offset.Zero
-                            },
-                            onDrag = { dragPosition += it },
-                            onDragEnd = {
-                                reorder(app)
-                                dragging = null
-                            }
-                        )
-                    }
-                    repeat(4 - row.size) { Spacer(Modifier.weight(1f)) }
+                    Text(
+                        "Appui long pour ajouter tes applications",
+                        color = Color.White.copy(alpha = .66f),
+                        fontSize = 13.sp,
+                        textAlign = TextAlign.Center
+                    )
                 }
-                Spacer(Modifier.height(12.dp))
+            } else {
+                LazyColumn(
+                    modifier = Modifier
+                        .weight(1f)
+                        .fillMaxWidth(),
+                    contentPadding = PaddingValues(top = 6.dp, bottom = 16.dp),
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    items(homeApps.chunked(4)) { row ->
+                        Row(
+                            Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceEvenly
+                        ) {
+                            row.forEach { app ->
+                                ZenoHomeIcon(
+                                    app = app,
+                                    modifier = Modifier
+                                        .weight(1f)
+                                        .onGloballyPositioned { iconBounds[app.packageName] = it.boundsInRoot() },
+                                    onOpen = { launcher.openByPackage(app.packageName) },
+                                    onDragStart = {
+                                        dragging = app
+                                        dragPosition = iconBounds[app.packageName]?.center ?: Offset.Zero
+                                    },
+                                    onDrag = { dragPosition += it },
+                                    onDragEnd = {
+                                        reorder(app)
+                                        dragging = null
+                                    }
+                                )
+                            }
+                            repeat(4 - row.size) { Spacer(Modifier.weight(1f)) }
+                        }
+                    }
+                }
             }
 
-            Spacer(Modifier.weight(1f))
-
-            ZenDock(
+            ZenoDock(
                 apps = apps,
                 launcher = launcher,
                 openDrawer = openDrawer
@@ -206,7 +227,7 @@ private fun ZenHome(
                     .alpha(.85f),
                 contentAlignment = Alignment.Center
             ) {
-                ZenRawIcon(app, 60)
+                ZenoRawIcon(app, 60)
             }
         }
     }
@@ -214,18 +235,18 @@ private fun ZenHome(
     if (showMenu) {
         AlertDialog(
             onDismissRequest = { showMenu = false },
-            title = { Text("Écran d'accueil") },
+            title = { Text("Zeno · Écran d'accueil") },
             text = {
                 Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                    ZenMenuRow(Icons.Default.Add, "Ajouter des applications") {
+                    ZenoMenuRow(Icons.Default.Add, "Choisir mes applications") {
                         showMenu = false
                         showAppsPicker = true
                     }
-                    ZenMenuRow(Icons.Default.Wallpaper, "Fond d'écran") {
+                    ZenoMenuRow(Icons.Default.Wallpaper, "Fond d'écran") {
                         showMenu = false
                         runCatching { context.startActivity(Intent(Intent.ACTION_SET_WALLPAPER)) }
                     }
-                    ZenMenuRow(Icons.Default.Apps, "Toutes les applications") {
+                    ZenoMenuRow(Icons.Default.Apps, "Toutes les applications") {
                         showMenu = false
                         openDrawer()
                     }
@@ -236,7 +257,7 @@ private fun ZenHome(
     }
 
     if (showAppsPicker) {
-        ZenAppsPicker(
+        ZenoAppsPicker(
             apps = apps,
             selected = settings.homePackages,
             onDismiss = { showAppsPicker = false },
@@ -249,7 +270,7 @@ private fun ZenHome(
 }
 
 @Composable
-private fun ZenMenuRow(icon: androidx.compose.ui.graphics.vector.ImageVector, text: String, onClick: () -> Unit) {
+private fun ZenoMenuRow(icon: androidx.compose.ui.graphics.vector.ImageVector, text: String, onClick: () -> Unit) {
     Row(
         Modifier
             .fillMaxWidth()
@@ -264,33 +285,62 @@ private fun ZenMenuRow(icon: androidx.compose.ui.graphics.vector.ImageVector, te
 }
 
 @Composable
-private fun ZenAppsPicker(
+private fun ZenoAppsPicker(
     apps: List<InstalledApp>,
     selected: List<String>,
     onDismiss: () -> Unit,
     onSave: (List<String>) -> Unit
 ) {
     val picked = remember(selected) { mutableStateListOf<String>().apply { addAll(selected) } }
+    var query by remember { mutableStateOf("") }
+    val filtered = remember(apps, query) {
+        if (query.isBlank()) apps else apps.filter { it.label.contains(query, ignoreCase = true) }
+    }
+
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Applications de l'accueil") },
+        title = { Text("Personnaliser l'accueil") },
         text = {
-            LazyColumn(Modifier.heightIn(max = 440.dp)) {
-                items(apps) { app ->
-                    val checked = app.packageName in picked
-                    Row(
-                        Modifier
-                            .fillMaxWidth()
-                            .clickable {
-                                if (checked) picked.remove(app.packageName) else if (picked.size < 16) picked.add(app.packageName)
-                            }
-                            .padding(vertical = 8.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        ZenRawIcon(app, 40)
-                        Spacer(Modifier.width(12.dp))
-                        Text(app.label, modifier = Modifier.weight(1f), maxLines = 1, overflow = TextOverflow.Ellipsis)
-                        Checkbox(checked = checked, onCheckedChange = null)
+            Column {
+                Text(
+                    "${picked.size} application${if (picked.size > 1) "s" else ""} sélectionnée${if (picked.size > 1) "s" else ""}",
+                    color = MaterialTheme.colorScheme.primary,
+                    fontSize = 12.sp,
+                    fontWeight = FontWeight.Bold
+                )
+                Spacer(Modifier.height(8.dp))
+                OutlinedTextField(
+                    value = query,
+                    onValueChange = { query = it },
+                    modifier = Modifier.fillMaxWidth(),
+                    singleLine = true,
+                    leadingIcon = { Icon(Icons.Default.Search, null) },
+                    placeholder = { Text("Rechercher une application") },
+                    shape = RoundedCornerShape(24.dp)
+                )
+                Spacer(Modifier.height(8.dp))
+                LazyColumn(Modifier.heightIn(max = 390.dp)) {
+                    items(filtered) { app ->
+                        val checked = app.packageName in picked
+                        Row(
+                            Modifier
+                                .fillMaxWidth()
+                                .clickable {
+                                    if (checked) picked.remove(app.packageName) else picked.add(app.packageName)
+                                }
+                                .padding(vertical = 8.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            ZenoRawIcon(app, 40)
+                            Spacer(Modifier.width(12.dp))
+                            Text(app.label, modifier = Modifier.weight(1f), maxLines = 1, overflow = TextOverflow.Ellipsis)
+                            Checkbox(
+                                checked = checked,
+                                onCheckedChange = {
+                                    if (checked) picked.remove(app.packageName) else picked.add(app.packageName)
+                                }
+                            )
+                        }
                     }
                 }
             }
@@ -298,7 +348,11 @@ private fun ZenAppsPicker(
         confirmButton = { TextButton(onClick = { onSave(picked.toList()) }) { Text("Enregistrer") } },
         dismissButton = {
             Row {
-                TextButton(onClick = { picked.clear() }) { Text("Vider") }
+                TextButton(onClick = {
+                    picked.clear()
+                    picked.addAll(apps.map { it.packageName })
+                }) { Text("Tout ajouter") }
+                TextButton(onClick = { picked.clear() }) { Text("Tout retirer") }
                 TextButton(onClick = onDismiss) { Text("Annuler") }
             }
         }
@@ -306,7 +360,7 @@ private fun ZenAppsPicker(
 }
 
 @Composable
-private fun ZenHomeIcon(
+private fun ZenoHomeIcon(
     app: InstalledApp,
     modifier: Modifier,
     onOpen: () -> Unit,
@@ -331,7 +385,7 @@ private fun ZenHomeIcon(
             .padding(vertical = 3.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        ZenRawIcon(app, 62)
+        ZenoRawIcon(app, 62)
         Spacer(Modifier.height(5.dp))
         Text(
             app.label,
@@ -348,7 +402,7 @@ private fun ZenHomeIcon(
 }
 
 @Composable
-private fun ZenDock(apps: List<InstalledApp>, launcher: AppLauncher, openDrawer: () -> Unit) {
+private fun ZenoDock(apps: List<InstalledApp>, launcher: AppLauncher, openDrawer: () -> Unit) {
     val contacts = remember(apps) { findDockApp(apps, listOf("contacts", "contact"), listOf("com.google.android.contacts")) }
     val store = remember(apps) { findDockApp(apps, listOf("play store", "store"), listOf("com.android.vending")) }
     val messages = remember(apps) { findDockApp(apps, listOf("messages", "message", "sms"), listOf("com.google.android.apps.messaging")) }
@@ -359,8 +413,8 @@ private fun ZenDock(apps: List<InstalledApp>, launcher: AppLauncher, openDrawer:
         horizontalArrangement = Arrangement.SpaceEvenly,
         verticalAlignment = Alignment.CenterVertically
     ) {
-        ZenDockApp(contacts, Icons.Default.Contacts) { if (contacts != null) launcher.openByPackage(contacts.packageName) else launcher.openByName("contacts") }
-        ZenDockApp(store, Icons.Default.Shop) { if (store != null) launcher.openByPackage(store.packageName) else launcher.openByName("play store") }
+        ZenoDockApp(contacts, Icons.Default.Contacts) { if (contacts != null) launcher.openByPackage(contacts.packageName) else launcher.openByName("contacts") }
+        ZenoDockApp(store, Icons.Default.Shop) { if (store != null) launcher.openByPackage(store.packageName) else launcher.openByName("play store") }
         Box(
             Modifier
                 .size(66.dp)
@@ -369,20 +423,20 @@ private fun ZenDock(apps: List<InstalledApp>, launcher: AppLauncher, openDrawer:
         ) {
             Icon(Icons.Default.Apps, "Applications", tint = Color.White, modifier = Modifier.size(39.dp))
         }
-        ZenDockApp(messages, Icons.Default.ChatBubble) { if (messages != null) launcher.openByPackage(messages.packageName) else launcher.openByName("messages") }
-        ZenDockApp(phone, Icons.Default.Phone) { if (phone != null) launcher.openByPackage(phone.packageName) else launcher.openByName("téléphone") }
+        ZenoDockApp(messages, Icons.Default.ChatBubble) { if (messages != null) launcher.openByPackage(messages.packageName) else launcher.openByName("messages") }
+        ZenoDockApp(phone, Icons.Default.Phone) { if (phone != null) launcher.openByPackage(phone.packageName) else launcher.openByName("téléphone") }
     }
 }
 
 @Composable
-private fun ZenDockApp(app: InstalledApp?, fallback: androidx.compose.ui.graphics.vector.ImageVector, onClick: () -> Unit) {
+private fun ZenoDockApp(app: InstalledApp?, fallback: androidx.compose.ui.graphics.vector.ImageVector, onClick: () -> Unit) {
     Box(
         Modifier
             .size(66.dp)
             .clickable(onClick = onClick),
         contentAlignment = Alignment.Center
     ) {
-        if (app != null) ZenRawIcon(app, 60)
+        if (app != null) ZenoRawIcon(app, 60)
         else Icon(fallback, null, tint = Color.White, modifier = Modifier.size(38.dp))
     }
 }
@@ -393,7 +447,7 @@ private fun findDockApp(apps: List<InstalledApp>, labels: List<String>, packages
 }
 
 @Composable
-private fun ZenDrawer(backHome: () -> Unit) {
+private fun ZenoDrawer(backHome: () -> Unit) {
     val context = LocalContext.current
     val launcher = remember { AppLauncher(context.applicationContext) }
     var apps by remember { mutableStateOf(emptyList<InstalledApp>()) }
@@ -445,7 +499,7 @@ private fun ZenDrawer(backHome: () -> Unit) {
                                     .padding(vertical = 4.dp),
                                 horizontalAlignment = Alignment.CenterHorizontally
                             ) {
-                                ZenRawIcon(app, 58)
+                                ZenoRawIcon(app, 58)
                                 Spacer(Modifier.height(5.dp))
                                 Text(
                                     app.label,
@@ -466,7 +520,7 @@ private fun ZenDrawer(backHome: () -> Unit) {
 }
 
 @Composable
-private fun ZenRawIcon(app: InstalledApp, size: Int) {
+private fun ZenoRawIcon(app: InstalledApp, size: Int) {
     val context = LocalContext.current
     val drawable = remember(app.packageName) {
         runCatching { context.packageManager.getApplicationIcon(app.packageName) }.getOrNull()
