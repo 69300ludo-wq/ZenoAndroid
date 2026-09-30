@@ -39,7 +39,8 @@ new = '''        brain = ZenoBrain(applicationContext)
         if (SpeechRecognizer.isRecognitionAvailable(this)) {
             if (Settings.canDrawOverlays(this)) showBubble()
             prepareSpeechRecognizer()
-            handler.postDelayed({ startWakeListening() }, 1200)
+            // Démarre presque immédiatement pour réduire le délai après activation du service.
+            handler.postDelayed({ startWakeListening() }, 350)
         }
 '''
 if old not in service:
@@ -68,11 +69,13 @@ old = '''                    if (System.currentTimeMillis() >= pauseWakeUntil) {
                     }
 '''
 new = '''                    if (System.currentTimeMillis() >= pauseWakeUntil) {
+                        // Relance plus vite l'écoute tout en laissant un petit délai au moteur
+                        // lorsqu'il signale qu'il est encore occupé.
                         val delay = when (error) {
-                            SpeechRecognizer.ERROR_RECOGNIZER_BUSY, SpeechRecognizer.ERROR_CLIENT -> 1800L
+                            SpeechRecognizer.ERROR_RECOGNIZER_BUSY, SpeechRecognizer.ERROR_CLIENT -> 900L
                             SpeechRecognizer.ERROR_INSUFFICIENT_PERMISSIONS -> 4000L
-                            SpeechRecognizer.ERROR_AUDIO -> 1800L
-                            else -> 900L
+                            SpeechRecognizer.ERROR_AUDIO -> 700L
+                            else -> 350L
                         }
                         handler.removeCallbacksAndMessages(null)
                         handler.postDelayed({
@@ -100,12 +103,26 @@ new = '''        runCatching { speechRecognizer?.startListening(recognitionInten
                 handler.postDelayed({
                     prepareSpeechRecognizer()
                     startWakeListening()
-                }, 1500)
+                }, 650)
             }
 '''
 if old not in service:
     raise SystemExit('startWakeListening introuvable')
 service = service.replace(old, new, 1)
+
+# Si une écoute se termine sans la phrase de réveil, repartir rapidement.
+service = service.replace(
+    'handler.postDelayed({ startWakeListening() }, 450)',
+    'handler.postDelayed({ startWakeListening() }, 220)',
+    1
+)
+
+# Après le réveil, ouvrir l'écoute de la commande plus rapidement.
+service = service.replace(
+    'handler.postDelayed({ beginCommandListening() }, 250)',
+    'handler.postDelayed({ beginCommandListening() }, 120)',
+    1
+)
 
 old = '''    private fun createRecognizer(): SpeechRecognizer {
         return if (
@@ -166,4 +183,4 @@ main = main.replace(old, new, 1)
 SERVICE.write_text(service, encoding='utf-8')
 VOICE.write_text(voice, encoding='utf-8')
 MAIN.write_text(main, encoding='utf-8')
-print('Stabilité du service vocal et reconnaissance corrigées')
+print('Stabilité conservée et détection vocale accélérée')
