@@ -11,8 +11,8 @@ android {
         applicationId = "com.zeno.robot"
         minSdk = 26
         targetSdk = 35
-        versionCode = 23
-        versionName = "1.1.8"
+        versionCode = 24
+        versionName = "1.1.9"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables { useSupportLibrary = true }
         buildConfigField("String", "ZENO_API_URL", "\"\"")
@@ -22,6 +22,28 @@ android {
     buildFeatures { compose = true; buildConfig = true }
     composeOptions { kotlinCompilerExtensionVersion = "1.5.14" }
     packaging { resources.excludes += "/META-INF/{AL2.0,LGPL2.1}" }
+}
+
+val installZenoRobot by tasks.registering {
+    doLast {
+        val parts = fileTree("src/main/assets") {
+            include("zeno_robot_*.b64")
+        }.files.sortedBy { it.name }
+        require(parts.isNotEmpty()) { "Robot Zeno officiel introuvable" }
+
+        val encoded = buildString {
+            parts.forEach { append(it.readText().trim()) }
+        }
+        val robotBytes = java.util.Base64.getDecoder().decode(encoded)
+        val target = file("src/main/res/drawable/zeno_robot.webp")
+        target.parentFile.mkdirs()
+        target.writeBytes(robotBytes)
+        println("Robot Zeno officiel installé: ${robotBytes.size} octets")
+    }
+}
+
+tasks.named("preBuild").configure {
+    dependsOn(installZenoRobot)
 }
 
 dependencies {
