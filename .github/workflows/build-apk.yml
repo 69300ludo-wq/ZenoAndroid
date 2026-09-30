@@ -99,6 +99,9 @@ jobs:
       - name: Ajouter le halo lumineux vocal
         run: python3 tools/voice_glow.py
 
+      - name: Stabiliser la reconnaissance vocale
+        run: python3 tools/voice_stability_fix.py
+
       - name: Ajuster interface et icones applications
         run: python3 tools/ui_polish.py
 
