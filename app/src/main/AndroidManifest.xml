@@ -23,12 +23,17 @@
 
     <application
         android:allowBackup="true"
-        android:icon="@drawable/zeno_icon_cyan"
-        android:label="Zeno"
-        android:roundIcon="@drawable/zeno_icon_cyan"
+        android:icon="@android:drawable/sym_def_app_icon"
+        android:label="Zen Launcher"
+        android:roundIcon="@android:drawable/sym_def_app_icon"
         android:supportsRtl="true"
         android:theme="@style/Theme.Zeno">
 
+        <activity
+            android:name=".ZenLauncherActivity"
+            android:exported="true"
+            android:launchMode="singleTask"
+            android:theme="@style/Theme.ZenLauncher" />
         <activity android:name=".LauncherActivityV126" android:exported="true" android:launchMode="singleTask" />
         <activity android:name=".LauncherActivityV125" android:exported="true" android:launchMode="singleTask" />
         <activity android:name=".LauncherActivityV124" android:exported="true" android:launchMode="singleTask" />
@@ -52,9 +57,9 @@
             android:name=".HomeLauncher"
             android:enabled="true"
             android:exported="true"
-            android:icon="@drawable/zeno_icon_cyan"
-            android:label="Zeno Launcher"
-            android:targetActivity=".LauncherActivityV124">
+            android:icon="@android:drawable/sym_def_app_icon"
+            android:label="Zen Launcher"
+            android:targetActivity=".ZenLauncherActivity">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.HOME" />
@@ -66,22 +71,22 @@
             android:name=".LauncherCyan"
             android:enabled="true"
             android:exported="true"
-            android:icon="@drawable/zeno_icon_cyan"
-            android:label="Zeno"
-            android:targetActivity=".LauncherActivityV124">
+            android:icon="@android:drawable/sym_def_app_icon"
+            android:label="Zen Launcher"
+            android:targetActivity=".ZenLauncherActivity">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity-alias>
 
-        <activity-alias android:name=".LauncherViolet" android:enabled="false" android:exported="true" android:icon="@drawable/zeno_icon_violet" android:label="Zeno" android:targetActivity=".LauncherActivityV124">
+        <activity-alias android:name=".LauncherViolet" android:enabled="false" android:exported="true" android:icon="@android:drawable/sym_def_app_icon" android:label="Zen Launcher" android:targetActivity=".ZenLauncherActivity">
             <intent-filter><action android:name="android.intent.action.MAIN"/><category android:name="android.intent.category.LAUNCHER"/></intent-filter>
         </activity-alias>
-        <activity-alias android:name=".LauncherGold" android:enabled="false" android:exported="true" android:icon="@drawable/zeno_icon_gold" android:label="Zeno" android:targetActivity=".LauncherActivityV124">
+        <activity-alias android:name=".LauncherGold" android:enabled="false" android:exported="true" android:icon="@android:drawable/sym_def_app_icon" android:label="Zen Launcher" android:targetActivity=".ZenLauncherActivity">
             <intent-filter><action android:name="android.intent.action.MAIN"/><category android:name="android.intent.category.LAUNCHER"/></intent-filter>
         </activity-alias>
-        <activity-alias android:name=".LauncherGreen" android:enabled="false" android:exported="true" android:icon="@drawable/zeno_icon_green" android:label="Zeno" android:targetActivity=".LauncherActivityV124">
+        <activity-alias android:name=".LauncherGreen" android:enabled="false" android:exported="true" android:icon="@android:drawable/sym_def_app_icon" android:label="Zen Launcher" android:targetActivity=".ZenLauncherActivity">
             <intent-filter><action android:name="android.intent.action.MAIN"/><category android:name="android.intent.category.LAUNCHER"/></intent-filter>
         </activity-alias>
 
