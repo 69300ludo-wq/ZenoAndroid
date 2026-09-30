@@ -20,11 +20,19 @@ class SetupActivity : ComponentActivity() {
         finishSetup()
     }
 
+    private val cameraPermissionLauncher = registerForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) {
+        // La caméra n'est nécessaire que pour allumer/éteindre la lampe.
+        // Zeno vocal continue de fonctionner même si l'utilisateur refuse.
+        continueWithOverlayPermission()
+    }
+
     private val micPermissionLauncher = registerForActivityResult(
         ActivityResultContracts.RequestPermission()
     ) { granted ->
         if (granted) {
-            continueWithOverlayPermission()
+            continueWithCameraPermission()
         } else {
             Toast.makeText(
                 this,
@@ -39,9 +47,17 @@ class SetupActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
 
         if (ContextCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED) {
-            continueWithOverlayPermission()
+            continueWithCameraPermission()
         } else {
             micPermissionLauncher.launch(Manifest.permission.RECORD_AUDIO)
+        }
+    }
+
+    private fun continueWithCameraPermission() {
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED) {
+            continueWithOverlayPermission()
+        } else {
+            cameraPermissionLauncher.launch(Manifest.permission.CAMERA)
         }
     }
 
