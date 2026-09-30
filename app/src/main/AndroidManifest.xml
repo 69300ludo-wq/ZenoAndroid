@@ -29,22 +29,11 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.Zeno">
 
-        <activity
-            android:name=".LauncherActivityV125"
-            android:exported="true"
-            android:launchMode="singleTask" />
-        <activity
-            android:name=".LauncherActivityV124"
-            android:exported="true"
-            android:launchMode="singleTask" />
-        <activity
-            android:name=".LauncherActivityV123"
-            android:exported="true"
-            android:launchMode="singleTask" />
-        <activity
-            android:name=".LauncherActivity"
-            android:exported="true"
-            android:launchMode="singleTask" />
+        <activity android:name=".LauncherActivityV126" android:exported="true" android:launchMode="singleTask" />
+        <activity android:name=".LauncherActivityV125" android:exported="true" android:launchMode="singleTask" />
+        <activity android:name=".LauncherActivityV124" android:exported="true" android:launchMode="singleTask" />
+        <activity android:name=".LauncherActivityV123" android:exported="true" android:launchMode="singleTask" />
+        <activity android:name=".LauncherActivity" android:exported="true" android:launchMode="singleTask" />
         <activity android:name=".MainActivity" android:exported="true" />
 
         <activity
@@ -65,7 +54,7 @@
             android:exported="true"
             android:icon="@drawable/zeno_icon_cyan"
             android:label="Zeno Launcher"
-            android:targetActivity=".LauncherActivityV125">
+            android:targetActivity=".LauncherActivityV126">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.HOME" />
@@ -79,20 +68,20 @@
             android:exported="true"
             android:icon="@drawable/zeno_icon_cyan"
             android:label="Zeno"
-            android:targetActivity=".LauncherActivityV125">
+            android:targetActivity=".LauncherActivityV126">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity-alias>
 
-        <activity-alias android:name=".LauncherViolet" android:enabled="false" android:exported="true" android:icon="@drawable/zeno_icon_violet" android:label="Zeno" android:targetActivity=".LauncherActivityV125">
+        <activity-alias android:name=".LauncherViolet" android:enabled="false" android:exported="true" android:icon="@drawable/zeno_icon_violet" android:label="Zeno" android:targetActivity=".LauncherActivityV126">
             <intent-filter><action android:name="android.intent.action.MAIN"/><category android:name="android.intent.category.LAUNCHER"/></intent-filter>
         </activity-alias>
-        <activity-alias android:name=".LauncherGold" android:enabled="false" android:exported="true" android:icon="@drawable/zeno_icon_gold" android:label="Zeno" android:targetActivity=".LauncherActivityV125">
+        <activity-alias android:name=".LauncherGold" android:enabled="false" android:exported="true" android:icon="@drawable/zeno_icon_gold" android:label="Zeno" android:targetActivity=".LauncherActivityV126">
             <intent-filter><action android:name="android.intent.action.MAIN"/><category android:name="android.intent.category.LAUNCHER"/></intent-filter>
         </activity-alias>
-        <activity-alias android:name=".LauncherGreen" android:enabled="false" android:exported="true" android:icon="@drawable/zeno_icon_green" android:label="Zeno" android:targetActivity=".LauncherActivityV125">
+        <activity-alias android:name=".LauncherGreen" android:enabled="false" android:exported="true" android:icon="@drawable/zeno_icon_green" android:label="Zeno" android:targetActivity=".LauncherActivityV126">
             <intent-filter><action android:name="android.intent.action.MAIN"/><category android:name="android.intent.category.LAUNCHER"/></intent-filter>
         </activity-alias>
 
