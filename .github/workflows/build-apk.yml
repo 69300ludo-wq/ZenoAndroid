@@ -27,7 +27,9 @@ jobs:
         run: gradle wrapper --gradle-version 8.7
 
       - name: Activer le micro direct Zeno
-        run: python3 tools/fix_micro.py
+        run: |
+          sed -i '0,/    chat,/s//    lambda _: chat,/' tools/fix_micro.py
+          python3 tools/fix_micro.py
 
       - name: Build debug APK
         run: ./gradlew assembleDebug
