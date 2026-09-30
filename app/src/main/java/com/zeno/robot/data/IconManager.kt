@@ -1,32 +1,28 @@
 package com.zeno.robot.data
 
-import android.content.ComponentName
 import android.content.Context
-import android.content.pm.PackageManager
 import com.zeno.robot.model.ZenoTheme
 
+/**
+ * Gère uniquement le thème visuel de l'application Zeno.
+ *
+ * Les anciennes versions modifiaient aussi des alias d'icône/launcher Android.
+ * Ces composants ont été supprimés quand Zeno est redevenu une application
+ * classique. Essayer de les activer provoquait un crash au changement de couleur.
+ */
 class IconManager(private val context: Context) {
     fun apply(theme: ZenoTheme) {
-        ZenoTheme.entries.forEach { item ->
-            val component = ComponentName(context.packageName, "${context.packageName}.${item.alias}")
-            val state = if (item == theme) {
-                PackageManager.COMPONENT_ENABLED_STATE_ENABLED
-            } else {
-                PackageManager.COMPONENT_ENABLED_STATE_DISABLED
-            }
-            context.packageManager.setComponentEnabledSetting(
-                component,
-                state,
-                PackageManager.DONT_KILL_APP
-            )
-        }
         context.getSharedPreferences("zeno", Context.MODE_PRIVATE)
-            .edit().putString("theme", theme.name).apply()
+            .edit()
+            .putString("theme", theme.name)
+            .apply()
     }
 
     fun current(): ZenoTheme {
         val value = context.getSharedPreferences("zeno", Context.MODE_PRIVATE)
             .getString("theme", ZenoTheme.CYAN.name)
-        return runCatching { ZenoTheme.valueOf(value ?: ZenoTheme.CYAN.name) }.getOrDefault(ZenoTheme.CYAN)
+        return runCatching {
+            ZenoTheme.valueOf(value ?: ZenoTheme.CYAN.name)
+        }.getOrDefault(ZenoTheme.CYAN)
     }
 }
