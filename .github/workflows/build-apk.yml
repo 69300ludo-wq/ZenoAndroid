@@ -96,6 +96,21 @@ jobs:
       - name: Ajuster interface et icones applications
         run: python3 tools/ui_polish.py
 
+      - name: Ajouter les langues mondiales au traducteur
+        run: |
+          python3 tools/world_languages.py
+          python3 - <<'PY'
+          from pathlib import Path
+          p = Path('app/src/main/java/com/zeno/robot/MainActivity.kt')
+          s = p.read_text(encoding='utf-8')
+          old = ').sortedBy { it.name }'
+          new = ').filter { com.google.mlkit.nl.translate.TranslateLanguage.fromLanguageTag(it.tag) != null }.sortedBy { it.name }'
+          if old not in s:
+              raise SystemExit('Liste des langues introuvable')
+          p.write_text(s.replace(old, new, 1), encoding='utf-8')
+          print('Liste limitée automatiquement aux langues prises en charge par ML Kit')
+          PY
+
       - name: Build debug APK
         run: ./gradlew assembleDebug
 
