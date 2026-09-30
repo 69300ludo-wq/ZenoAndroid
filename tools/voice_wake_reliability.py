@@ -98,5 +98,24 @@ if old_intent not in s:
     raise SystemExit("Bloc recognitionIntent introuvable")
 s = s.replace(old_intent, new_intent, 1)
 
+old_open = '''    private fun openZeno() {
+        startActivity(
+            Intent(this, MainActivity::class.java)
+                .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK)
+        )
+    }
+'''
+new_open = '''    private fun openZeno() {
+        // La phrase de réveil peut ramener Zeno au premier plan depuis l'accueil Android.
+        startActivity(
+            Intent(this, MainActivity::class.java)
+                .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP)
+        )
+    }
+'''
+if old_open not in s:
+    raise SystemExit("Bloc openZeno introuvable")
+s = s.replace(old_open, new_open, 1)
+
 SERVICE.write_text(s, encoding="utf-8")
-print("Reconnaissance vocale Zeno renforcée")
+print("Reconnaissance vocale Zeno renforcée sur l'écran d'accueil Android")
