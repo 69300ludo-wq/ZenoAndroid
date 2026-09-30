@@ -87,6 +87,9 @@ jobs:
           print("Bouton vocal d'accueil ajouté")
           PY
 
+      - name: Activer la phrase de réveil personnalisable
+        run: python3 tools/custom_wake_phrase.py
+
       - name: Build debug APK
         run: ./gradlew assembleDebug
 
