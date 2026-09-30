@@ -231,6 +231,7 @@ class FloatingZenoService : Service() {
         wakeMode = false
         speechRecognizer?.cancel()
         listening = false
+        openZeno()
         speak("Oui, je t'écoute") {
             wakeTriggered = false
             handler.postDelayed({ beginCommandListening() }, 250)
@@ -308,7 +309,7 @@ class FloatingZenoService : Service() {
     private fun openZeno() {
         startActivity(
             Intent(this, MainActivity::class.java)
-                .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP)
+                .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK)
         )
     }
 
