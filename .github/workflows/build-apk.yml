@@ -93,6 +93,9 @@ jobs:
       - name: Activer la phrase de réveil personnalisable
         run: python3 tools/custom_wake_phrase.py
 
+      - name: Renforcer le déclenchement vocal
+        run: python3 tools/voice_wake_reliability.py
+
       - name: Ajuster interface et icones applications
         run: python3 tools/ui_polish.py
 
