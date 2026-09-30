@@ -98,13 +98,15 @@ jobs:
         run: python3 tools/wake_save_hardening.py
       - name: Fixer définitivement la phrase Salut Zeno
         run: python3 tools/fixed_wake_phrase.py
+      - name: Unifier Zeno flottant et le micro
+        run: python3 tools/floating_single_mic.py
       - name: Vérifier et compiler APK
         run: ./gradlew lintDebug assembleDebug
       - name: Upload ZIP APK et rapport
         if: always()
         uses: actions/upload-artifact@v6
         with:
-          name: Zeno-v1.3.6-salut-zeno
+          name: Zeno-v1.3.7-flottant-mono-micro
           path: |
             app/build/outputs/apk/debug/app-debug.apk
             app/build/reports/lint-results-debug.html
