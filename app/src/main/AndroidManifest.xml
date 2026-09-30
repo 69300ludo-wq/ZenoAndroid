@@ -29,7 +29,10 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.Zeno">
 
-        <activity android:name=".LauncherActivity" android:exported="true" />
+        <activity
+            android:name=".LauncherActivity"
+            android:exported="true"
+            android:launchMode="singleTask" />
         <activity android:name=".MainActivity" android:exported="true" />
 
         <activity
@@ -43,6 +46,20 @@
             android:exported="false"
             android:excludeFromRecents="true"
             android:noHistory="true" />
+
+        <activity-alias
+            android:name=".HomeLauncher"
+            android:enabled="true"
+            android:exported="true"
+            android:icon="@drawable/zeno_icon_cyan"
+            android:label="Zeno Launcher"
+            android:targetActivity=".LauncherActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.HOME" />
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
+        </activity-alias>
 
         <activity-alias
             android:name=".LauncherCyan"
