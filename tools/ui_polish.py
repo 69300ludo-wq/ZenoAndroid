@@ -15,6 +15,32 @@ top_new = 'Modifier.fillMaxWidth().statusBarsPadding().padding(horizontal = 12.d
 if top_old in s:
     s = s.replace(top_old, top_new, 1)
 
+# Cacher le petit menu supérieur de l'écran d'accueil.
+# Les modules Paramètres / À propos restent accessibles depuis les modules de l'accueil.
+home_top_menu = '''                Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                    Surface(
+                        modifier = Modifier.size(42.dp).clickable { navigate(Screen.SETTINGS) },
+                        shape = RoundedCornerShape(14.dp),
+                        color = Color(0x99101D3C),
+                        border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFF24548A))
+                    ) {
+                        Box(contentAlignment = Alignment.Center) { Icon(Icons.Default.Settings, "Paramètres", tint = Color.White) }
+                    }
+                    Spacer(Modifier.weight(1f))
+                    Surface(
+                        modifier = Modifier.size(42.dp),
+                        shape = RoundedCornerShape(14.dp),
+                        color = Color(0x99251A32),
+                        border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFF76502C))
+                    ) {
+                        Box(contentAlignment = Alignment.Center) { Icon(Icons.Default.Star, null, tint = Color(0xFFFFC64B)) }
+                    }
+                }
+
+'''
+if home_top_menu in s:
+    s = s.replace(home_top_menu, '', 1)
+
 # Agrandir uniquement le robot de l’accueil, sans changer le reste du design.
 robot_old = '''                Box(contentAlignment = Alignment.Center, modifier = Modifier.fillMaxWidth().height(185.dp)) {
                     Box(
@@ -92,4 +118,4 @@ if icon_old not in s:
 s = s.replace(icon_old, icon_new, 1)
 
 p.write_text(s, encoding='utf-8')
-print('UI Zeno ajustée : barre haute descendue, robot agrandi, vraies icônes applications')
+print('UI Zeno ajustée : menu accueil caché, barre haute descendue, robot agrandi, vraies icônes applications')
