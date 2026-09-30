@@ -6,17 +6,20 @@ s = SERVICE.read_text(encoding='utf-8')
 
 # Le point flottant et la phrase "Salut Zeno" utilisent désormais le même
 # SpeechRecognizer du service. Aucun lancement d'une seconde activité vocale.
-old_touch = '''                    if (moved < 18f * resources.displayMetrics.density) {
-                        if (duration >= 650) openZeno() else openReliableVoiceCommand()
-                    }
-'''
-new_touch = '''                    if (moved < 18f * resources.displayMetrics.density) {
-                        if (duration >= 650) openZeno() else beginFloatingCommand()
-                    }
-'''
-if old_touch not in s:
-    raise SystemExit('Gestion du toucher du point flottant introuvable')
-s = s.replace(old_touch, new_touch, 1)
+if 'view.setOnClickListener { openReliableVoiceCommand() }' in s:
+    s = s.replace(
+        'view.setOnClickListener { openReliableVoiceCommand() }',
+        'view.setOnClickListener { beginFloatingCommand() }',
+        1,
+    )
+elif 'if (duration >= 650) openZeno() else openReliableVoiceCommand()' in s:
+    s = s.replace(
+        'if (duration >= 650) openZeno() else openReliableVoiceCommand()',
+        'if (duration >= 650) openZeno() else beginFloatingCommand()',
+        1,
+    )
+else:
+    raise SystemExit('Gestion du clic du point flottant introuvable')
 
 # Remplace complètement le chemin qui détruisait le micro du service puis lançait
 # VoiceCommandActivity. C'était le dernier endroit où deux chemins micro pouvaient
@@ -51,15 +54,15 @@ if count != 1:
 
 # Le réveil vocal reste lui aussi dans le service et allume le point pendant la
 # transition vers l'écoute de commande.
-old_trigger = '''        wakeTriggered = false
-        handler.postDelayed({ beginCommandListening() }, 550)
-'''
-new_trigger = '''        wakeTriggered = false
+for delay in ('550', '350'):
+    old_trigger = f'''        wakeTriggered = false\n        handler.postDelayed({{ beginCommandListening() }}, {delay})\n'''
+    new_trigger = '''        wakeTriggered = false
         setBubbleListening(true)
         handler.postDelayed({ beginCommandListening() }, 420)
 '''
-if old_trigger in s:
-    s = s.replace(old_trigger, new_trigger, 1)
+    if old_trigger in s:
+        s = s.replace(old_trigger, new_trigger, 1)
+        break
 
 # L'activité vocale reste disponible uniquement depuis le bouton dédié de l'app,
 # mais le service flottant ne la lance plus directement.
