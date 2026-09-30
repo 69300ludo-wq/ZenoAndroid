@@ -26,6 +26,9 @@ jobs:
       - name: Create Gradle wrapper
         run: gradle wrapper --gradle-version 8.7
 
+      - name: Activer le micro direct Zeno
+        run: python3 tools/fix_micro.py
+
       - name: Build debug APK
         run: ./gradlew assembleDebug
 
