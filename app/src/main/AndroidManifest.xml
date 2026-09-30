@@ -2,9 +2,7 @@
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.RECORD_AUDIO" />
     <uses-permission android:name="android.permission.CAMERA" />
-    <uses-feature android:name="android.hardware.camera" android:required="false" />
     <uses-feature android:name="android.hardware.camera.flash" android:required="false" />
-    <uses-feature android:name="android.hardware.microphone" android:required="false" />
     <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MICROPHONE" />
@@ -34,7 +32,7 @@
     <application
         android:allowBackup="true"
         android:icon="@drawable/zeno_icon_discret"
-        android:label="Zeno"
+        android:label="@string/app_name"
         android:roundIcon="@drawable/zeno_icon_discret"
         android:supportsRtl="true"
         android:theme="@style/Theme.Zeno">

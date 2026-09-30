@@ -7,14 +7,14 @@ plugins {
 
 android {
     namespace = "com.zeno.robot"
-    compileSdk = 35
+    compileSdk = 36
 
     defaultConfig {
         applicationId = "com.zeno.robot"
         minSdk = 26
-        targetSdk = 35
-        versionCode = 37
-        versionName = "1.3.2"
+        targetSdk = 36
+        versionCode = 38
+        versionName = "1.3.3"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables { useSupportLibrary = true }
         buildConfigField("String", "ZENO_API_URL", "\"\"")
@@ -27,6 +27,14 @@ android {
     buildFeatures { compose = true; buildConfig = true }
     composeOptions { kotlinCompilerExtensionVersion = "1.5.14" }
     packaging { resources.excludes += "/META-INF/{AL2.0,LGPL2.1}" }
+    lint {
+        // Le projet reste volontairement sur la pile Kotlin 1.9.24 / Compose Compiler 1.5.14
+        // déjà validée. Les mises à jour Jetpack récentes imposent une migration Kotlin/Compose
+        // plus large et ne doivent pas être mélangées à un correctif de stabilité.
+        disable += "GradleDependency"
+        warningsAsErrors = true
+        abortOnError = true
+    }
 }
 
 val installZenoRobot by tasks.registering {
@@ -40,7 +48,8 @@ val installZenoRobot by tasks.registering {
             parts.forEach { append(it.readText().trim()) }
         }
         val robotBytes = Base64.getDecoder().decode(encoded)
-        val target = file("src/main/res/drawable/zeno_robot.webp")
+        file("src/main/res/drawable/zeno_robot.webp").delete()
+        val target = file("src/main/res/drawable-nodpi/zeno_robot.webp")
         target.parentFile.mkdirs()
         target.writeBytes(robotBytes)
         println("Robot Zeno officiel installé: ${robotBytes.size} octets")
@@ -52,7 +61,8 @@ val installZenoIcon by tasks.registering {
         val source = file("src/main/assets/zeno_icon_discret.b64")
         require(source.exists()) { "Icône Zeno discrète introuvable" }
         val iconBytes = Base64.getDecoder().decode(source.readText().trim())
-        val target = file("src/main/res/drawable/zeno_icon_discret.webp")
+        file("src/main/res/drawable/zeno_icon_discret.webp").delete()
+        val target = file("src/main/res/drawable-nodpi/zeno_icon_discret.webp")
         target.parentFile.mkdirs()
         target.writeBytes(iconBytes)
         println("Icône Zeno discrète installée: ${iconBytes.size} octets")
