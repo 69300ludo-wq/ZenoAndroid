@@ -16,7 +16,6 @@ if top_old in s:
     s = s.replace(top_old, top_new, 1)
 
 # Cacher le petit menu supérieur de l'écran d'accueil.
-# Les modules Paramètres / À propos restent accessibles depuis les modules de l'accueil.
 home_top_menu = '''                Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                     Surface(
                         modifier = Modifier.size(42.dp).clickable { navigate(Screen.SETTINGS) },
@@ -41,8 +40,8 @@ home_top_menu = '''                Row(Modifier.fillMaxWidth(), verticalAlignmen
 if home_top_menu in s:
     s = s.replace(home_top_menu, '', 1)
 
-# Agrandir uniquement le robot de l’accueil, sans changer le reste du design.
-robot_old = '''                Box(contentAlignment = Alignment.Center, modifier = Modifier.fillMaxWidth().height(185.dp)) {
+# Ne pas afficher le grand robot sur l'écran d'accueil.
+robot_home = '''                Box(contentAlignment = Alignment.Center, modifier = Modifier.fillMaxWidth().height(185.dp)) {
                     Box(
                         Modifier.size(148.dp).background(
                             Brush.radialGradient(
@@ -62,30 +61,11 @@ robot_old = '''                Box(contentAlignment = Alignment.Center, modifier
                             contentScale = ContentScale.Fit
                         )
                     }
-                }'''
-robot_new = '''                Box(contentAlignment = Alignment.Center, modifier = Modifier.fillMaxWidth().height(220.dp)) {
-                    Box(
-                        Modifier.size(180.dp).background(
-                            Brush.radialGradient(
-                                listOf(Color(0xFF1EC8FF), accent, Color(0xFF8A2DFF), Color(0xFF071B4D))
-                            ),
-                            CircleShape
-                        )
-                    )
-                    Box(
-                        Modifier.size(164.dp).background(Color(0xFF071F62), CircleShape),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Image(
-                            painter = painterResource(R.drawable.zeno_robot),
-                            contentDescription = "Zeno",
-                            modifier = Modifier.size(150.dp),
-                            contentScale = ContentScale.Fit
-                        )
-                    }
-                }'''
-if robot_old in s:
-    s = s.replace(robot_old, robot_new, 1)
+                }
+
+'''
+if robot_home in s:
+    s = s.replace(robot_home, '', 1)
 
 # Remplacer la lettre factice par l’icône réelle fournie par Android.
 icon_old = '''                        Surface(shape = CircleShape, color = accent.copy(alpha = .18f), modifier = Modifier.size(42.dp)) {
@@ -118,4 +98,4 @@ if icon_old not in s:
 s = s.replace(icon_old, icon_new, 1)
 
 p.write_text(s, encoding='utf-8')
-print('UI Zeno ajustée : menu accueil caché, barre haute descendue, robot agrandi, vraies icônes applications')
+print('UI Zeno ajustée : menu accueil caché, grand robot accueil caché, barre haute descendue, vraies icônes applications')
