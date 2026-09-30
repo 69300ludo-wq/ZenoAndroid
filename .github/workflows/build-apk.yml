@@ -95,6 +95,7 @@ jobs:
       - name: Vérifier et compiler APK
         run: ./gradlew lintDebug assembleDebug
       - name: Upload ZIP APK et rapport
+        if: always()
         uses: actions/upload-artifact@v6
         with:
           name: Zeno-v1.3.3-stable
