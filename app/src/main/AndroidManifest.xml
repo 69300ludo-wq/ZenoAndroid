@@ -6,7 +6,6 @@
     <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MICROPHONE" />
-    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_SPECIAL_USE" />
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
 
     <queries>
@@ -47,11 +46,14 @@
             </intent-filter>
         </activity>
 
+        <!-- Le moteur vocal est isolé du processus principal : un problème du
+             SpeechRecognizer ne peut plus fermer toute l'application Zeno. -->
         <activity
             android:name=".VoiceCommandActivity"
             android:exported="false"
             android:excludeFromRecents="true"
-            android:noHistory="true" />
+            android:noHistory="true"
+            android:process=":voice" />
 
         <activity
             android:name=".SetupActivity"
@@ -67,10 +69,7 @@
             android:name=".service.FloatingZenoService"
             android:enabled="true"
             android:exported="false"
-            android:foregroundServiceType="microphone|specialUse">
-            <property
-                android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE"
-                android:value="Floating AI companion overlay activated by the user with optional voice wake phrase" />
-        </service>
+            android:process=":voice"
+            android:foregroundServiceType="microphone" />
     </application>
 </manifest>
