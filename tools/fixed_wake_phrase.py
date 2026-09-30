@@ -61,7 +61,7 @@ private fun WakePhraseScreen(accent: Color) {
                         context.startActivity(
                             Intent(
                                 Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
-                                Uri.parse("package:${context.packageName}")
+                                "package:${context.packageName}".toUri()
                             )
                         )
                         status = "Autorise Zeno à s’afficher par-dessus les autres applications, puis reviens activer l’écoute."
