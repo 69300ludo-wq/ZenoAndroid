@@ -1,3 +1,5 @@
+import java.util.Base64
+
 plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.android")
@@ -34,7 +36,7 @@ val installZenoRobot by tasks.registering {
         val encoded = buildString {
             parts.forEach { append(it.readText().trim()) }
         }
-        val robotBytes = java.util.Base64.getDecoder().decode(encoded)
+        val robotBytes = Base64.getDecoder().decode(encoded)
         val target = file("src/main/res/drawable/zeno_robot.webp")
         target.parentFile.mkdirs()
         target.writeBytes(robotBytes)
