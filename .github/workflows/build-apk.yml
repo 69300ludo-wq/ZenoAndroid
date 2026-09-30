@@ -114,6 +114,9 @@ jobs:
           print('Liste limitée automatiquement aux langues prises en charge par ML Kit')
           PY
 
+      - name: Ajouter le mode SOS
+        run: python3 tools/add_sos.py
+
       - name: Build debug APK
         run: ./gradlew assembleDebug
 
