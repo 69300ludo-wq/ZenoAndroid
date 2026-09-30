@@ -84,6 +84,8 @@ jobs:
           PY
       - name: Ajouter le mode SOS
         run: python3 tools/add_sos.py
+      - name: Ajouter les commandes intelligentes
+        run: python3 tools/smart_commands.py
       - name: Correctif final anti-plantage
         run: python3 tools/final_runtime_stability.py
       - name: Build debug APK
