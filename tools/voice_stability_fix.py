@@ -39,7 +39,6 @@ new = '''        brain = ZenoBrain(applicationContext)
         if (SpeechRecognizer.isRecognitionAvailable(this)) {
             if (Settings.canDrawOverlays(this)) showBubble()
             prepareSpeechRecognizer()
-            // Écoute quasi immédiate dès que le service Zeno est actif.
             handler.postDelayed({ startWakeListening() }, 150)
         }
 '''
@@ -68,7 +67,11 @@ old = '''                    if (System.currentTimeMillis() >= pauseWakeUntil) {
                         handler.postDelayed({ startWakeListening() }, delay)
                     }
 '''
-new = '''                    if (System.currentTimeMillis() >= pauseWakeUntil) {
+new = '''                    if (!wakeMode) {
+                        // Pendant une commande, ne pas abandonner trop vite : redonne une chance
+                        // au micro si Android coupe l'écoute avant que l'utilisateur ait fini.
+                        handler.postDelayed({ beginCommandListening() }, 650)
+                    } else if (System.currentTimeMillis() >= pauseWakeUntil) {
                         val delay = when (error) {
                             SpeechRecognizer.ERROR_RECOGNIZER_BUSY, SpeechRecognizer.ERROR_CLIENT -> 700L
                             SpeechRecognizer.ERROR_INSUFFICIENT_PERMISSIONS -> 4000L
@@ -108,29 +111,42 @@ if old not in service:
     raise SystemExit('startWakeListening introuvable')
 service = service.replace(old, new, 1)
 
-# Si une écoute se termine sans la phrase de réveil, repartir presque tout de suite.
 service = service.replace(
     'handler.postDelayed({ startWakeListening() }, 450)',
     'handler.postDelayed({ startWakeListening() }, 100)',
     1
 )
 
-# Déclenchement direct : dès que la phrase est reconnue, Zeno s'ouvre et écoute la commande.
-# On retire la réponse « Oui, je t’écoute » avant l'écoute, car elle ajoutait environ 1,3 s
-# et pouvait être réentendue par le micro. Zeno garde sa voix pour répondre aux commandes.
+# La phrase de réveil ne doit PAS ouvrir le menu principal de Zeno.
+# Elle passe simplement en mode commande et laisse un délai naturel avant l'écoute.
 old_trigger = '''        openZeno()
         speak("Oui, je t'écoute") {
             wakeTriggered = false
             handler.postDelayed({ beginCommandListening() }, 250)
         }
 '''
-new_trigger = '''        openZeno()
-        wakeTriggered = false
-        handler.postDelayed({ beginCommandListening() }, 50)
+new_trigger = '''        wakeTriggered = false
+        handler.postDelayed({ beginCommandListening() }, 450)
 '''
 if old_trigger not in service:
     raise SystemExit('Bloc de déclenchement vocal introuvable')
 service = service.replace(old_trigger, new_trigger, 1)
+
+# Donne davantage de temps à Android pour entendre une phrase complète.
+old_intent = '''        putExtra(RecognizerIntent.EXTRA_PARTIAL_RESULTS, partial)
+        putExtra(RecognizerIntent.EXTRA_MAX_RESULTS, 8)
+'''
+new_intent = '''        putExtra(RecognizerIntent.EXTRA_PARTIAL_RESULTS, partial)
+        putExtra(RecognizerIntent.EXTRA_MAX_RESULTS, 8)
+        if (!partial) {
+            putExtra(RecognizerIntent.EXTRA_SPEECH_INPUT_COMPLETE_SILENCE_LENGTH_MILLIS, 2200L)
+            putExtra(RecognizerIntent.EXTRA_SPEECH_INPUT_POSSIBLY_COMPLETE_SILENCE_LENGTH_MILLIS, 1600L)
+            putExtra(RecognizerIntent.EXTRA_SPEECH_INPUT_MINIMUM_LENGTH_MILLIS, 1200L)
+        }
+'''
+if old_intent not in service:
+    raise SystemExit('Intent de reconnaissance introuvable')
+service = service.replace(old_intent, new_intent, 1)
 
 old = '''    private fun createRecognizer(): SpeechRecognizer {
         return if (
@@ -191,4 +207,4 @@ main = main.replace(old, new, 1)
 SERVICE.write_text(service, encoding='utf-8')
 VOICE.write_text(voice, encoding='utf-8')
 MAIN.write_text(main, encoding='utf-8')
-print('Détection vocale rapide et déclenchement direct activés')
+print('Commande vocale prolongée sans ouverture du menu Zeno')
