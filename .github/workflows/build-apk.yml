@@ -58,7 +58,7 @@ jobs:
           if needle not in s: raise SystemExit("Emplacement du bouton vocal introuvable")
           p.write_text(s.replace(needle, replacement, 1), encoding='utf-8')
           PY
-      - name: Activer la phrase de réveil personnalisable
+      - name: Préparer le moteur de phrase vocale
         run: python3 tools/custom_wake_phrase.py
       - name: Renforcer le déclenchement vocal
         run: python3 tools/voice_wake_reliability.py
@@ -94,15 +94,17 @@ jobs:
         run: python3 tools/voice_runtime_coordination.py
       - name: Nettoyage qualité final
         run: python3 tools/quality_cleanup.py
-      - name: Sécuriser l'enregistrement de la phrase
+      - name: Sécuriser la préparation de la phrase
         run: python3 tools/wake_save_hardening.py
+      - name: Fixer définitivement la phrase Salut Zeno
+        run: python3 tools/fixed_wake_phrase.py
       - name: Vérifier et compiler APK
         run: ./gradlew lintDebug assembleDebug
       - name: Upload ZIP APK et rapport
         if: always()
         uses: actions/upload-artifact@v6
         with:
-          name: Zeno-v1.3.5-voix-basse
+          name: Zeno-v1.3.6-salut-zeno
           path: |
             app/build/outputs/apk/debug/app-debug.apk
             app/build/reports/lint-results-debug.html
