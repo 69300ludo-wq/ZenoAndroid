@@ -83,10 +83,13 @@ icons = icons.replace(
     '''context.getSharedPreferences("zeno", Context.MODE_PRIVATE).edit {\n            putString("theme", theme.name)\n        }''',
 )
 
-# Accessibilité : une vue tactile personnalisée doit réellement surcharger performClick().
+# Accessibilité : le point lumineux n'a pas besoin d'ImageView. Une View dédiée peut
+# surcharger performClick() sans déclencher les règles AppCompat des widgets image.
+service = service.replace('private var bubble: ImageView? = null', 'private var bubble: View? = null', 1)
+service = service.replace('import android.widget.ImageView\n', '', 1)
 service = service.replace(
-    'val view = ImageView(this).apply {',
-    '''val view = object : ImageView(this) {\n            override fun performClick(): Boolean = super.performClick()\n        }.apply {''',
+    '''val view = ImageView(this).apply {\n            setImageDrawable(null)\n''',
+    '''val view = object : View(this) {\n            override fun performClick(): Boolean = super.performClick()\n        }.apply {\n''',
     1,
 )
 anchor = '''        val params = WindowManager.LayoutParams(\n'''
