@@ -141,5 +141,57 @@ s = s.replace('''        speechRecognizer?.destroy()
         runCatching { tts?.shutdown() }
 ''')
 
+# La phrase personnalisée est lue depuis un petit fichier partagé entre le processus
+# principal et le processus vocal. Cela évite de redémarrer le service micro au clic
+# sur « Enregistrer », qui était la source du plantage sur certains téléphones.
+old_phrase = '''    private fun currentWakePhrase(): String =
+        getSharedPreferences("zeno_voice", Context.MODE_PRIVATE)
+            .getString("wake_phrase", "Salut Zeno")
+            ?.trim()
+            ?.takeIf { it.isNotBlank() }
+            ?: "Salut Zeno"
+'''
+new_phrase = '''    private fun currentWakePhrase(): String {
+        val fromFile = runCatching {
+            java.io.File(filesDir, "wake_phrase.txt")
+                .takeIf { it.exists() }
+                ?.readText()
+                ?.trim()
+                ?.takeIf { it.isNotBlank() }
+        }.getOrNull()
+        if (!fromFile.isNullOrBlank()) return fromFile
+        return getSharedPreferences("zeno_voice", Context.MODE_PRIVATE)
+            .getString("wake_phrase", "Salut Zeno")
+            ?.trim()
+            ?.takeIf { it.isNotBlank() }
+            ?: "Salut Zeno"
+    }
+'''
+s = s.replace(old_phrase, new_phrase, 1)
+
 p.write_text(s, encoding='utf-8')
-print('Service Zeno sécurisé : permissions avant FGS, overlay optionnel, vocal sans ouverture de menu')
+
+# Enregistrer la phrase ne doit jamais arrêter/redémarrer le service vocal.
+# Le fichier est visible immédiatement depuis le processus :voice.
+main_path = Path('app/src/main/java/com/zeno/robot/MainActivity.kt')
+main = main_path.read_text(encoding='utf-8')
+old_save = '''                        wakePhrase = clean
+                        prefs.edit().putString("wake_phrase", clean).apply()
+                        editWakePhrase = false
+                        context.stopService(Intent(context, FloatingZenoService::class.java))
+                        if (Settings.canDrawOverlays(context)) startFloatingZeno(context)
+'''
+new_save = '''                        wakePhrase = clean
+                        prefs.edit().putString("wake_phrase", clean).apply()
+                        runCatching {
+                            java.io.File(context.filesDir, "wake_phrase.txt").writeText(clean)
+                        }
+                        editWakePhrase = false
+                        Toast.makeText(context, "Phrase enregistrée", Toast.LENGTH_SHORT).show()
+'''
+if old_save not in main:
+    raise SystemExit('Bloc Enregistrer de la phrase vocale introuvable')
+main = main.replace(old_save, new_save, 1)
+main_path.write_text(main, encoding='utf-8')
+
+print('Stabilité finale appliquée : service vocal protégé et enregistrement de phrase sans redémarrage')
