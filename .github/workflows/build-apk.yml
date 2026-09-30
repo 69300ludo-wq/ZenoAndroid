@@ -93,6 +93,9 @@ jobs:
       - name: Activer la phrase de réveil personnalisable
         run: python3 tools/custom_wake_phrase.py
 
+      - name: Ajuster interface et icones applications
+        run: python3 tools/ui_polish.py
+
       - name: Build debug APK
         run: ./gradlew assembleDebug
 
