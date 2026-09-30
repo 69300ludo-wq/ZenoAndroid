@@ -32,6 +32,9 @@ android {
         // déjà validée. Les mises à jour Jetpack récentes imposent une migration Kotlin/Compose
         // plus large et ne doivent pas être mélangées à un correctif de stabilité.
         disable += "GradleDependency"
+        // Faux positif du lint récent : Context.stopService(Intent explicite) compare le composant,
+        // pas l'identité de l'instance Intent comme un listener SAM.
+        disable += "ImplicitSamInstance"
         warningsAsErrors = true
         abortOnError = true
     }
