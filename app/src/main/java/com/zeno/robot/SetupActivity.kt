@@ -23,8 +23,6 @@ class SetupActivity : ComponentActivity() {
     private val cameraPermissionLauncher = registerForActivityResult(
         ActivityResultContracts.RequestPermission()
     ) {
-        // La caméra n'est nécessaire que pour allumer/éteindre la lampe.
-        // Zeno vocal continue de fonctionner même si l'utilisateur refuse.
         continueWithOverlayPermission()
     }
 
@@ -71,18 +69,37 @@ class SetupActivity : ComponentActivity() {
             Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
             Uri.parse("package:$packageName")
         )
-        overlayLauncher.launch(intent)
+        runCatching { overlayLauncher.launch(intent) }
+            .onFailure {
+                Toast.makeText(this, "Impossible d'ouvrir l'autorisation d'affichage.", Toast.LENGTH_LONG).show()
+                finish()
+            }
     }
 
     private fun finishSetup() {
-        if (Settings.canDrawOverlays(this) &&
+        val ready = Settings.canDrawOverlays(this) &&
             ContextCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED
-        ) {
+
+        if (!ready) {
+            finish()
+            return
+        }
+
+        // Certains téléphones refusent un service micro selon leur gestion de batterie.
+        // Ce refus ne doit jamais faire planter l'application principale.
+        runCatching {
             ContextCompat.startForegroundService(
                 this,
                 Intent(this, FloatingZenoService::class.java)
             )
-            Toast.makeText(this, "Zeno est maintenant actif sur ton écran.", Toast.LENGTH_LONG).show()
+        }.onSuccess {
+            Toast.makeText(this, "Zeno vocal est activé.", Toast.LENGTH_LONG).show()
+        }.onFailure {
+            Toast.makeText(
+                this,
+                "Zeno reste utilisable. Le mode vocal permanent n'a pas pu démarrer sur ce téléphone.",
+                Toast.LENGTH_LONG
+            ).show()
         }
         finish()
     }
