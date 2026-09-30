@@ -23,9 +23,9 @@
 
     <application
         android:allowBackup="true"
-        android:icon="@android:drawable/sym_def_app_icon"
-        android:label="Zen Launcher"
-        android:roundIcon="@android:drawable/sym_def_app_icon"
+        android:icon="@drawable/zeno_icon_discret"
+        android:label="Zeno"
+        android:roundIcon="@drawable/zeno_icon_discret"
         android:supportsRtl="true"
         android:theme="@style/Theme.Zeno">
 
@@ -57,8 +57,8 @@
             android:name=".HomeLauncher"
             android:enabled="true"
             android:exported="true"
-            android:icon="@android:drawable/sym_def_app_icon"
-            android:label="Zen Launcher"
+            android:icon="@drawable/zeno_icon_discret"
+            android:label="Zeno Launcher"
             android:targetActivity=".ZenLauncherActivity">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
@@ -71,8 +71,8 @@
             android:name=".LauncherCyan"
             android:enabled="true"
             android:exported="true"
-            android:icon="@android:drawable/sym_def_app_icon"
-            android:label="Zen Launcher"
+            android:icon="@drawable/zeno_icon_discret"
+            android:label="Zeno"
             android:targetActivity=".ZenLauncherActivity">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
@@ -80,13 +80,13 @@
             </intent-filter>
         </activity-alias>
 
-        <activity-alias android:name=".LauncherViolet" android:enabled="false" android:exported="true" android:icon="@android:drawable/sym_def_app_icon" android:label="Zen Launcher" android:targetActivity=".ZenLauncherActivity">
+        <activity-alias android:name=".LauncherViolet" android:enabled="false" android:exported="true" android:icon="@drawable/zeno_icon_discret" android:label="Zeno" android:targetActivity=".ZenLauncherActivity">
             <intent-filter><action android:name="android.intent.action.MAIN"/><category android:name="android.intent.category.LAUNCHER"/></intent-filter>
         </activity-alias>
-        <activity-alias android:name=".LauncherGold" android:enabled="false" android:exported="true" android:icon="@android:drawable/sym_def_app_icon" android:label="Zen Launcher" android:targetActivity=".ZenLauncherActivity">
+        <activity-alias android:name=".LauncherGold" android:enabled="false" android:exported="true" android:icon="@drawable/zeno_icon_discret" android:label="Zeno" android:targetActivity=".ZenLauncherActivity">
             <intent-filter><action android:name="android.intent.action.MAIN"/><category android:name="android.intent.category.LAUNCHER"/></intent-filter>
         </activity-alias>
-        <activity-alias android:name=".LauncherGreen" android:enabled="false" android:exported="true" android:icon="@android:drawable/sym_def_app_icon" android:label="Zen Launcher" android:targetActivity=".ZenLauncherActivity">
+        <activity-alias android:name=".LauncherGreen" android:enabled="false" android:exported="true" android:icon="@drawable/zeno_icon_discret" android:label="Zeno" android:targetActivity=".ZenLauncherActivity">
             <intent-filter><action android:name="android.intent.action.MAIN"/><category android:name="android.intent.category.LAUNCHER"/></intent-filter>
         </activity-alias>
 
