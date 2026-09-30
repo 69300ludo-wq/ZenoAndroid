@@ -3,20 +3,60 @@ from pathlib import Path
 p = Path('app/src/main/java/com/zeno/robot/service/FloatingZenoService.kt')
 s = p.read_text(encoding='utf-8')
 
-# Ne jamais tuer tout le service uniquement parce que l'overlay n'est pas encore autorisé.
-s = s.replace('''        if (Settings.canDrawOverlays(this)) {
-            showBubble()
-            prepareSpeechRecognizer()
-            handler.postDelayed({ startWakeListening() }, 1000)
-        } else stopSelf()
-''', '''        if (Settings.canDrawOverlays(this)) runCatching { showBubble() }
-        if (hasMic() && SpeechRecognizer.isRecognitionAvailable(this)) {
-            runCatching { prepareSpeechRecognizer() }
-            handler.postDelayed({ startWakeListening() }, 300)
-        }
-''')
+# Remplace entièrement le démarrage du service par une version protégée.
+start = s.index('    override fun onCreate() {')
+end = s.index('    private fun createNotification()', start)
+safe_start = '''    override fun onCreate() {
+        super.onCreate()
 
-# Overlay : un échec WindowManager ne doit jamais faire planter Zeno.
+        // Sur Android récent, un service micro lancé sans permission peut tuer le processus.
+        // On vérifie tout AVANT startForeground et on arrête proprement au moindre problème.
+        if (!hasMic() || !SpeechRecognizer.isRecognitionAvailable(this)) {
+            stopSelf()
+            return
+        }
+
+        brain = ZenoBrain(applicationContext)
+
+        val foregroundOk = runCatching {
+            createChannel()
+            startForeground(NOTIFICATION_ID, createNotification())
+        }.isSuccess
+        if (!foregroundOk) {
+            stopSelf()
+            return
+        }
+
+        tts = runCatching {
+            TextToSpeech(this) { status ->
+                if (status == TextToSpeech.SUCCESS) {
+                    runCatching { tts?.language = Locale.FRENCH }
+                }
+            }
+        }.getOrNull()
+
+        // Le point lumineux est facultatif : s'il échoue, le vocal continue sans planter.
+        if (Settings.canDrawOverlays(this)) runCatching { showBubble() }
+        runCatching { prepareSpeechRecognizer() }
+        handler.postDelayed({ runCatching { startWakeListening() } }, 500)
+    }
+
+    override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
+        if (!hasMic()) {
+            stopSelf(startId)
+            return START_NOT_STICKY
+        }
+        if (Settings.canDrawOverlays(this) && bubble == null) runCatching { showBubble() }
+        if (speechRecognizer == null) runCatching { prepareSpeechRecognizer() }
+        handler.postDelayed({ runCatching { startWakeListening() } }, 350)
+        // Evite une relance automatique du service par Android dans un état invalide.
+        return START_NOT_STICKY
+    }
+
+'''
+s = s[:start] + safe_start + s[end:]
+
+# Overlay : aucun WindowManager ne doit pouvoir faire planter le processus.
 s = s.replace('''        windowManager.addView(view, params)
         bubble = view
 ''', '''        runCatching {
@@ -27,19 +67,19 @@ s = s.replace('''        windowManager.addView(view, params)
         }
 ''')
 
-# Le réveil vocal ne doit pas ouvrir le menu ni faire parler Zeno par-dessus l'utilisateur.
-start = '''        openZeno()
+# Le réveil vocal ne doit ouvrir AUCUN menu et ne doit pas parler par-dessus l'utilisateur.
+old_trigger = '''        openZeno()
         speak("Oui, je t'écoute") {
             wakeTriggered = false
             handler.postDelayed({ beginCommandListening() }, 250)
         }
 '''
-s = s.replace(start, '''        wakeTriggered = false
-        handler.postDelayed({ beginCommandListening() }, 500)
+s = s.replace(old_trigger, '''        wakeTriggered = false
+        handler.postDelayed({ beginCommandListening() }, 550)
 ''')
 
-# Reconnaissance standard = meilleure compatibilité entre constructeurs Android.
-old = '''    private fun createRecognizer(): SpeechRecognizer {
+# Compatibilité maximale : moteur vocal Android standard, création protégée.
+old_recognizer = '''    private fun createRecognizer(): SpeechRecognizer {
         return if (
             Build.VERSION.SDK_INT >= Build.VERSION_CODES.S &&
             SpeechRecognizer.isOnDeviceRecognitionAvailable(this)
@@ -50,11 +90,9 @@ old = '''    private fun createRecognizer(): SpeechRecognizer {
         }
     }
 '''
-s = s.replace(old, '''    private fun createRecognizer(): SpeechRecognizer =
+s = s.replace(old_recognizer, '''    private fun createRecognizer(): SpeechRecognizer =
         SpeechRecognizer.createSpeechRecognizer(this)
 ''')
-
-# Création protégée contre les exceptions constructeur/service vocal.
 s = s.replace('''        speechRecognizer = createRecognizer().apply {
             setRecognitionListener(object : RecognitionListener {
 ''', '''        val recognizer = runCatching { createRecognizer() }.getOrNull() ?: return
@@ -62,39 +100,46 @@ s = s.replace('''        speechRecognizer = createRecognizer().apply {
             setRecognitionListener(object : RecognitionListener {
 ''', 1)
 
-# Plus de temps pour donner une commande complète.
-s = s.replace('putExtra(RecognizerIntent.EXTRA_MAX_RESULTS, 8)', '''putExtra(RecognizerIntent.EXTRA_MAX_RESULTS, 10)
-        if (!partial) {
-            putExtra(RecognizerIntent.EXTRA_SPEECH_INPUT_COMPLETE_SILENCE_LENGTH_MILLIS, 3200L)
-            putExtra(RecognizerIntent.EXTRA_SPEECH_INPUT_POSSIBLY_COMPLETE_SILENCE_LENGTH_MILLIS, 2400L)
-            putExtra(RecognizerIntent.EXTRA_SPEECH_INPUT_MINIMUM_LENGTH_MILLIS, 1500L)
-        }''')
+# Plus de temps pour finir une commande.
+s = s.replace('putExtra(RecognizerIntent.EXTRA_MAX_RESULTS, 8)', 'putExtra(RecognizerIntent.EXTRA_MAX_RESULTS, 10)')
+needle = '        putExtra(RecognizerIntent.EXTRA_MAX_RESULTS, 10)\n'
+if needle in s and 'EXTRA_SPEECH_INPUT_COMPLETE_SILENCE_LENGTH_MILLIS' not in s:
+    s = s.replace(needle, needle + '''        if (!partial) {
+            putExtra(RecognizerIntent.EXTRA_SPEECH_INPUT_COMPLETE_SILENCE_LENGTH_MILLIS, 3500L)
+            putExtra(RecognizerIntent.EXTRA_SPEECH_INPUT_POSSIBLY_COMPLETE_SILENCE_LENGTH_MILLIS, 2600L)
+            putExtra(RecognizerIntent.EXTRA_SPEECH_INPUT_MINIMUM_LENGTH_MILLIS, 1600L)
+        }
+''', 1)
 
-# Si le moteur plante/bloque, le recréer proprement au lieu de boucler sur le même objet.
-s = s.replace('''        runCatching { speechRecognizer?.startListening(recognitionIntent(partial = true)) }
-            .onFailure { handler.postDelayed({ startWakeListening() }, 1000) }
-''', '''        runCatching { speechRecognizer?.startListening(recognitionIntent(partial = true)) }
-            .onFailure {
-                listening = false
-                runCatching { speechRecognizer?.destroy() }
-                speechRecognizer = null
-                handler.postDelayed({
-                    runCatching { prepareSpeechRecognizer() }
-                    startWakeListening()
-                }, 700)
-            }
+# Ne jamais ouvrir une activité de secours si le moteur vocal a un raté : on retente proprement.
+s = s.replace('''        if (!SpeechRecognizer.isRecognitionAvailable(this)) {
+            openReliableVoiceCommand()
+            return
+        }
+''', '''        if (!SpeechRecognizer.isRecognitionAvailable(this)) {
+            handler.postDelayed({ startWakeListening() }, 1000)
+            return
+        }
+''')
+s = s.replace('''            runCatching { speechRecognizer?.startListening(recognitionIntent(partial = false)) }
+                .onFailure { openReliableVoiceCommand() }
+''', '''            runCatching { speechRecognizer?.startListening(recognitionIntent(partial = false)) }
+                .onFailure {
+                    listening = false
+                    wakeMode = true
+                    handler.postDelayed({ startWakeListening() }, 700)
+                }
 ''')
 
-# La commande vide redonne une chance au micro sans retourner immédiatement au réveil.
-s = s.replace('''        if (sentence.isBlank()) {
-            handler.postDelayed({ startWakeListening() }, 500)
-            return
-        }
-''', '''        if (sentence.isBlank()) {
-            handler.postDelayed({ beginCommandListening() }, 700)
-            return
-        }
+# Destruction toujours protégée.
+s = s.replace('''        speechRecognizer?.destroy()
+        speechRecognizer = null
+        tts?.shutdown()
+''', '''        runCatching { speechRecognizer?.cancel() }
+        runCatching { speechRecognizer?.destroy() }
+        speechRecognizer = null
+        runCatching { tts?.shutdown() }
 ''')
 
 p.write_text(s, encoding='utf-8')
-print('Correctif final runtime : overlay protégé, vocal protégé, menu supprimé au réveil')
+print('Service Zeno sécurisé : permissions avant FGS, overlay optionnel, vocal sans ouverture de menu')
