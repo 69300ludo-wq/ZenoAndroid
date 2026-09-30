@@ -12,7 +12,12 @@ data class HomeSettings(
     val showDock: Boolean = true,
     val robotSize: Int = 430,
     val appCount: Int = 8,
-    val homePackages: List<String> = emptyList()
+    val homePackages: List<String> = emptyList(),
+    val hiddenPackages: List<String> = emptyList(),
+    val homeColumns: Int = 4,
+    val drawerColumns: Int = 4,
+    val iconSize: Int = 58,
+    val showLabels: Boolean = true
 )
 
 data class AppFolder(
@@ -30,9 +35,14 @@ class LauncherPreferences(context: Context) {
         showSearch = prefs.getBoolean("show_search", true),
         showApps = prefs.getBoolean("show_apps", true),
         showDock = prefs.getBoolean("show_dock", true),
-        robotSize = prefs.getInt("robot_size", 430).coerceIn(300, 520),
-        appCount = prefs.getInt("app_count", 8).coerceIn(4, 12),
-        homePackages = decodeStringList(prefs.getString("home_packages", "[]"))
+        robotSize = prefs.getInt("robot_size", 430).coerceIn(280, 520),
+        appCount = prefs.getInt("app_count", 8).coerceIn(4, 20),
+        homePackages = decodeStringList(prefs.getString("home_packages", "[]")),
+        hiddenPackages = decodeStringList(prefs.getString("hidden_packages", "[]")),
+        homeColumns = prefs.getInt("home_columns", 4).coerceIn(3, 5),
+        drawerColumns = prefs.getInt("drawer_columns", 4).coerceIn(3, 5),
+        iconSize = prefs.getInt("icon_size", 58).coerceIn(46, 72),
+        showLabels = prefs.getBoolean("show_labels", true)
     )
 
     fun saveHomeSettings(settings: HomeSettings) {
@@ -42,9 +52,14 @@ class LauncherPreferences(context: Context) {
             .putBoolean("show_search", settings.showSearch)
             .putBoolean("show_apps", settings.showApps)
             .putBoolean("show_dock", settings.showDock)
-            .putInt("robot_size", settings.robotSize.coerceIn(300, 520))
-            .putInt("app_count", settings.appCount.coerceIn(4, 12))
+            .putInt("robot_size", settings.robotSize.coerceIn(280, 520))
+            .putInt("app_count", settings.appCount.coerceIn(4, 20))
             .putString("home_packages", encodeStringList(settings.homePackages))
+            .putString("hidden_packages", encodeStringList(settings.hiddenPackages))
+            .putInt("home_columns", settings.homeColumns.coerceIn(3, 5))
+            .putInt("drawer_columns", settings.drawerColumns.coerceIn(3, 5))
+            .putInt("icon_size", settings.iconSize.coerceIn(46, 72))
+            .putBoolean("show_labels", settings.showLabels)
             .apply()
     }
 
