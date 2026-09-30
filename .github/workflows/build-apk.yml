@@ -11,29 +11,23 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-
       - name: Set up JDK 17
         uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: '17'
-
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@v4
         with:
           gradle-version: '8.7'
-
       - name: Create Gradle wrapper
         run: gradle wrapper --gradle-version 8.7
-
       - name: Activer le micro direct Zeno
         run: |
           sed -i '0,/    chat,/s//    lambda _: chat,/' tools/fix_micro.py
           python3 tools/fix_micro.py
-
       - name: Regrouper les modules sur accueil
         run: python3 tools/home_modules.py
-
       - name: Ajouter le bouton vocal sur accueil
         run: |
           python3 - <<'PY'
@@ -48,35 +42,12 @@ jobs:
                               Text(
                                   "Paramètres",'''
           replacement = '''                Spacer(Modifier.height(14.dp))
-                          Row(
-                              Modifier.fillMaxWidth(),
-                              horizontalArrangement = Arrangement.Center
-                          ) {
-                              Surface(
-                                  modifier = Modifier.size(68.dp).clickable {
-                                      context.startActivity(Intent(context, VoiceCommandActivity::class.java))
-                                  },
-                                  shape = CircleShape,
-                                  color = accent.copy(alpha = .24f),
-                                  border = androidx.compose.foundation.BorderStroke(2.dp, Color(0xFF59D8FF))
-                              ) {
-                                  Box(contentAlignment = Alignment.Center) {
-                                      Icon(
-                                          Icons.Default.Mic,
-                                          contentDescription = "Lancer le vocal Zeno",
-                                          tint = Color.White,
-                                          modifier = Modifier.size(34.dp)
-                                      )
-                                  }
+                          Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Center) {
+                              Surface(modifier = Modifier.size(68.dp).clickable { context.startActivity(Intent(context, VoiceCommandActivity::class.java)) }, shape = CircleShape, color = accent.copy(alpha = .24f), border = androidx.compose.foundation.BorderStroke(2.dp, Color(0xFF59D8FF))) {
+                                  Box(contentAlignment = Alignment.Center) { Icon(Icons.Default.Mic, contentDescription = "Lancer le vocal Zeno", tint = Color.White, modifier = Modifier.size(34.dp)) }
                               }
                           }
-                          Text(
-                              "Parler à Zeno",
-                              color = Color(0xFFBFD7FF),
-                              fontSize = 12.sp,
-                              textAlign = TextAlign.Center,
-                              modifier = Modifier.fillMaxWidth().padding(top = 6.dp)
-                          )
+                          Text("Parler à Zeno", color = Color(0xFFBFD7FF), fontSize = 12.sp, textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth().padding(top = 6.dp))
                           Row(
                               Modifier.fillMaxWidth().padding(top = 12.dp),
                               horizontalArrangement = Arrangement.Center,
@@ -84,30 +55,21 @@ jobs:
                           ) {
                               Text(
                                   "Paramètres",'''
-          if needle not in s:
-              raise SystemExit("Emplacement du bouton vocal introuvable")
+          if needle not in s: raise SystemExit("Emplacement du bouton vocal introuvable")
           p.write_text(s.replace(needle, replacement, 1), encoding='utf-8')
-          print("Bouton vocal accueil ajouté")
           PY
-
       - name: Activer la phrase de réveil personnalisable
         run: python3 tools/custom_wake_phrase.py
-
       - name: Renforcer le déclenchement vocal
         run: python3 tools/voice_wake_reliability.py
-
       - name: Ajouter le halo lumineux vocal
         run: python3 tools/voice_glow.py
-
       - name: Stabiliser la reconnaissance vocale
         run: python3 tools/voice_stability_fix.py
-
       - name: Remplacer le robot flottant par la lumière
         run: python3 tools/light_only_indicator.py
-
       - name: Ajuster interface et icones applications
         run: python3 tools/ui_polish.py
-
       - name: Ajouter les langues mondiales au traducteur
         run: |
           python3 tools/world_languages.py
@@ -117,18 +79,15 @@ jobs:
           s = p.read_text(encoding='utf-8')
           old = ').sortedBy { it.name }'
           new = ').filter { com.google.mlkit.nl.translate.TranslateLanguage.fromLanguageTag(it.tag) != null }.sortedBy { it.name }'
-          if old not in s:
-              raise SystemExit('Liste des langues introuvable')
+          if old not in s: raise SystemExit('Liste des langues introuvable')
           p.write_text(s.replace(old, new, 1), encoding='utf-8')
-          print('Liste limitée automatiquement aux langues prises en charge par ML Kit')
           PY
-
       - name: Ajouter le mode SOS
         run: python3 tools/add_sos.py
-
+      - name: Correctif final anti-plantage
+        run: python3 tools/final_runtime_stability.py
       - name: Build debug APK
         run: ./gradlew assembleDebug
-
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
