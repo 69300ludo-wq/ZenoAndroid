@@ -26,9 +26,7 @@ new = '''        brain = ZenoBrain(applicationContext)
             return
         }
         createChannel()
-        val foregroundStarted = runCatching {
-            startForeground(NOTIFICATION_ID, createNotification())
-        }.isSuccess
+        val foregroundStarted = runCatching { startForeground(NOTIFICATION_ID, createNotification()) }.isSuccess
         if (!foregroundStarted) {
             stopSelf()
             return
@@ -39,11 +37,10 @@ new = '''        brain = ZenoBrain(applicationContext)
         if (SpeechRecognizer.isRecognitionAvailable(this)) {
             if (Settings.canDrawOverlays(this)) showBubble()
             prepareSpeechRecognizer()
-            handler.postDelayed({ startWakeListening() }, 150)
+            handler.postDelayed({ startWakeListening() }, 120)
         }
 '''
-if old not in service:
-    raise SystemExit('Bloc onCreate du service introuvable')
+if old not in service: raise SystemExit('Bloc onCreate introuvable')
 service = service.replace(old, new, 1)
 
 old = '''        speechRecognizer = createRecognizer().apply {
@@ -53,99 +50,58 @@ new = '''        val recognizer = runCatching { createRecognizer() }.getOrNull()
         speechRecognizer = recognizer.apply {
             setRecognitionListener(object : RecognitionListener {
 '''
-if old not in service:
-    raise SystemExit('Création SpeechRecognizer service introuvable')
+if old not in service: raise SystemExit('Recognizer service introuvable')
 service = service.replace(old, new, 1)
 
 old = '''                    if (System.currentTimeMillis() >= pauseWakeUntil) {
+                        handler.postDelayed({ startWakeListening() }, 750)
+                    }
+'''
+new = '''                    if (!wakeMode) {
+                        handler.postDelayed({ beginCommandListening() }, 500)
+                    } else if (System.currentTimeMillis() >= pauseWakeUntil) {
                         val delay = when (error) {
-                            SpeechRecognizer.ERROR_RECOGNIZER_BUSY -> 1800L
+                            SpeechRecognizer.ERROR_RECOGNIZER_BUSY, SpeechRecognizer.ERROR_CLIENT -> 650L
                             SpeechRecognizer.ERROR_INSUFFICIENT_PERMISSIONS -> 4000L
-                            SpeechRecognizer.ERROR_AUDIO -> 1800L
-                            else -> 700L
+                            SpeechRecognizer.ERROR_AUDIO -> 450L
+                            SpeechRecognizer.ERROR_NO_MATCH, SpeechRecognizer.ERROR_SPEECH_TIMEOUT -> 120L
+                            else -> 220L
                         }
                         handler.postDelayed({ startWakeListening() }, delay)
                     }
 '''
-new = '''                    if (!wakeMode) {
-                        // Pendant une commande, ne pas abandonner trop vite : redonne une chance
-                        // au micro si Android coupe l'écoute avant que l'utilisateur ait fini.
-                        handler.postDelayed({ beginCommandListening() }, 650)
-                    } else if (System.currentTimeMillis() >= pauseWakeUntil) {
-                        val delay = when (error) {
-                            SpeechRecognizer.ERROR_RECOGNIZER_BUSY, SpeechRecognizer.ERROR_CLIENT -> 700L
-                            SpeechRecognizer.ERROR_INSUFFICIENT_PERMISSIONS -> 4000L
-                            SpeechRecognizer.ERROR_AUDIO -> 500L
-                            else -> 220L
-                        }
-                        handler.removeCallbacksAndMessages(null)
-                        handler.postDelayed({
-                            if (error == SpeechRecognizer.ERROR_RECOGNIZER_BUSY || error == SpeechRecognizer.ERROR_CLIENT) {
-                                runCatching { speechRecognizer?.destroy() }
-                                speechRecognizer = null
-                                prepareSpeechRecognizer()
-                            }
-                            startWakeListening()
-                        }, delay)
-                    }
-'''
-if old not in service:
-    raise SystemExit('Gestion erreur vocale service introuvable')
+if old not in service: raise SystemExit('Gestion erreur introuvable')
 service = service.replace(old, new, 1)
 
-old = '''        runCatching { speechRecognizer?.startListening(recognitionIntent(partial = true)) }
-            .onFailure { handler.postDelayed({ startWakeListening() }, 1000) }
-'''
-new = '''        runCatching { speechRecognizer?.startListening(recognitionIntent(partial = true)) }
-            .onFailure {
-                listening = false
-                runCatching { speechRecognizer?.destroy() }
-                speechRecognizer = null
-                handler.postDelayed({
-                    prepareSpeechRecognizer()
-                    startWakeListening()
-                }, 500)
-            }
-'''
-if old not in service:
-    raise SystemExit('startWakeListening introuvable')
-service = service.replace(old, new, 1)
+service = service.replace('handler.postDelayed({ startWakeListening() }, 450)', 'handler.postDelayed({ startWakeListening() }, 100)', 1)
 
-service = service.replace(
-    'handler.postDelayed({ startWakeListening() }, 450)',
-    'handler.postDelayed({ startWakeListening() }, 100)',
-    1
-)
-
-# La phrase de réveil ne doit PAS ouvrir le menu principal de Zeno.
-# Elle passe simplement en mode commande et laisse un délai naturel avant l'écoute.
 old_trigger = '''        openZeno()
         speak("Oui, je t'écoute") {
             wakeTriggered = false
             handler.postDelayed({ beginCommandListening() }, 250)
         }
 '''
-new_trigger = '''        wakeTriggered = false
-        handler.postDelayed({ beginCommandListening() }, 450)
+new_trigger = '''        // Ne pas ouvrir le menu : passe directement à la commande.
+        wakeTriggered = false
+        handler.postDelayed({ beginCommandListening() }, 350)
 '''
-if old_trigger not in service:
-    raise SystemExit('Bloc de déclenchement vocal introuvable')
+if old_trigger not in service: raise SystemExit('Déclenchement introuvable')
 service = service.replace(old_trigger, new_trigger, 1)
 
-# Donne davantage de temps à Android pour entendre une phrase complète.
 old_intent = '''        putExtra(RecognizerIntent.EXTRA_PARTIAL_RESULTS, partial)
         putExtra(RecognizerIntent.EXTRA_MAX_RESULTS, 8)
 '''
 new_intent = '''        putExtra(RecognizerIntent.EXTRA_PARTIAL_RESULTS, partial)
-        putExtra(RecognizerIntent.EXTRA_MAX_RESULTS, 8)
+        putExtra(RecognizerIntent.EXTRA_MAX_RESULTS, 10)
+        putExtra(RecognizerIntent.EXTRA_CALLING_PACKAGE, packageName)
         if (!partial) {
-            putExtra(RecognizerIntent.EXTRA_SPEECH_INPUT_COMPLETE_SILENCE_LENGTH_MILLIS, 2200L)
-            putExtra(RecognizerIntent.EXTRA_SPEECH_INPUT_POSSIBLY_COMPLETE_SILENCE_LENGTH_MILLIS, 1600L)
-            putExtra(RecognizerIntent.EXTRA_SPEECH_INPUT_MINIMUM_LENGTH_MILLIS, 1200L)
+            // Laisse le temps de prononcer une commande complète, même avec une petite pause.
+            putExtra(RecognizerIntent.EXTRA_SPEECH_INPUT_COMPLETE_SILENCE_LENGTH_MILLIS, 3000L)
+            putExtra(RecognizerIntent.EXTRA_SPEECH_INPUT_POSSIBLY_COMPLETE_SILENCE_LENGTH_MILLIS, 2200L)
+            putExtra(RecognizerIntent.EXTRA_SPEECH_INPUT_MINIMUM_LENGTH_MILLIS, 1600L)
         }
 '''
-if old_intent not in service:
-    raise SystemExit('Intent de reconnaissance introuvable')
+if old_intent not in service: raise SystemExit('Intent reconnaissance introuvable')
 service = service.replace(old_intent, new_intent, 1)
 
 old = '''    private fun createRecognizer(): SpeechRecognizer {
@@ -159,11 +115,9 @@ old = '''    private fun createRecognizer(): SpeechRecognizer {
         }
     }
 '''
-new = '''    private fun createRecognizer(): SpeechRecognizer =
-        SpeechRecognizer.createSpeechRecognizer(this)
+new = '''    private fun createRecognizer(): SpeechRecognizer = SpeechRecognizer.createSpeechRecognizer(this)
 '''
-if old not in voice:
-    raise SystemExit('createRecognizer VoiceCommandActivity introuvable')
+if old not in voice: raise SystemExit('createRecognizer activité introuvable')
 voice = voice.replace(old, new, 1)
 
 old = '''        speechRecognizer = createRecognizer().apply {
@@ -178,10 +132,8 @@ new = '''        val recognizer = runCatching { createRecognizer() }.getOrNull()
         speechRecognizer = recognizer.apply {
             setRecognitionListener(object : RecognitionListener {
 '''
-if old not in voice:
-    raise SystemExit('Création VoiceCommandActivity introuvable')
+if old not in voice: raise SystemExit('Recognizer activité introuvable')
 voice = voice.replace(old, new, 1)
-
 voice = voice.replace('.size((270f + (voiceLevel * 52f)).dp)', '.size(300.dp)', 1)
 
 old = '''private fun startFloatingZeno(context: Context) {
@@ -193,18 +145,14 @@ new = '''private fun startFloatingZeno(context: Context) {
         context.startActivity(Intent(context, SetupActivity::class.java))
         return
     }
-    runCatching {
-        ContextCompat.startForegroundService(context, Intent(context, FloatingZenoService::class.java))
-    }.onFailure {
-        Toast.makeText(context, "Impossible de démarrer l'écoute vocale. Ouvre Zeno puis réessaie.", Toast.LENGTH_LONG).show()
-    }
+    runCatching { ContextCompat.startForegroundService(context, Intent(context, FloatingZenoService::class.java)) }
+        .onFailure { Toast.makeText(context, "Impossible de démarrer l'écoute vocale. Ouvre Zeno puis réessaie.", Toast.LENGTH_LONG).show() }
 }
 '''
-if old not in main:
-    raise SystemExit('startFloatingZeno introuvable')
+if old not in main: raise SystemExit('startFloatingZeno introuvable')
 main = main.replace(old, new, 1)
 
 SERVICE.write_text(service, encoding='utf-8')
 VOICE.write_text(voice, encoding='utf-8')
 MAIN.write_text(main, encoding='utf-8')
-print('Commande vocale prolongée sans ouverture du menu Zeno')
+print('Reconnaissance vocale Zeno améliorée : écoute rapide et commande plus longue')
