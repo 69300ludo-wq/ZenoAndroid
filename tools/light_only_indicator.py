@@ -1,4 +1,5 @@
 from pathlib import Path
+import runpy
 
 SERVICE = Path('app/src/main/java/com/zeno/robot/service/FloatingZenoService.kt')
 s = SERVICE.read_text(encoding='utf-8')
@@ -69,3 +70,6 @@ s = s.replace(
 
 SERVICE.write_text(s, encoding='utf-8')
 print('Robot flottant retiré : témoin lumineux vocal uniquement')
+
+# Ajoute ensuite la voix parlée de Zeno à la même version compilée.
+runpy.run_path('tools/zeno_spoken_voice.py', run_name='__main__')
