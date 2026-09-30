@@ -1,0 +1,247 @@
+from pathlib import Path
+import re
+
+path = Path('app/src/main/java/com/zeno/robot/MainActivity.kt')
+s = path.read_text(encoding='utf-8')
+
+s = s.replace('import android.app.Activity\n', 'import android.Manifest\nimport android.app.Activity\n')
+s = s.replace('import android.content.Intent\n', 'import android.content.Intent\nimport android.content.pm.PackageManager\n')
+s = s.replace('import android.os.Bundle\n', 'import android.os.Build\nimport android.os.Bundle\n')
+s = s.replace('import android.speech.RecognizerIntent\n', 'import android.speech.RecognitionListener\nimport android.speech.RecognizerIntent\nimport android.speech.SpeechRecognizer\n')
+s = s.replace('import android.speech.tts.TextToSpeech\n', 'import android.speech.tts.TextToSpeech\nimport android.widget.Toast\n')
+
+marker = '''private data class HomeAction(
+    val icon: ImageVector,
+    val title: String,
+    val subtitle: String,
+    val screen: Screen,
+    val tint: Color
+)
+'''
+replacement = marker + '''
+private data class SpeechInputState(
+    val listening: Boolean,
+    val status: String,
+    val start: () -> Unit
+)
+'''
+if 'private data class SpeechInputState' not in s:
+    s = s.replace(marker, replacement)
+
+s = s.replace(
+    'private fun HomeScreen(accent: Color, navigate: (Screen) -> Unit) {\n    val actions = listOf(',
+    'private fun HomeScreen(accent: Color, navigate: (Screen) -> Unit) {\n    val context = LocalContext.current\n    val actions = listOf('
+)
+s = s.replace(
+    '''Text("Demande à Zeno...", color = Color(0xFF91A4CE), modifier = Modifier.weight(1f))
+                        Icon(Icons.Default.Mic, null, tint = Color.White)''',
+    '''Text("Demande à Zeno...", color = Color(0xFF91A4CE), modifier = Modifier.weight(1f))
+                        IconButton(onClick = {
+                            context.startActivity(Intent(context, VoiceCommandActivity::class.java))
+                        }) {
+                            Icon(Icons.Default.Mic, "Parler à Zeno", tint = Color.White)
+                        }'''
+)
+
+chat = r'''@Composable
+private fun ChatScreen(accent: Color) {
+    val context = LocalContext.current
+    val brain = remember { ZenoBrain(context.applicationContext) }
+    val messages = remember {
+        mutableStateListOf(
+            ChatMessage(true, "Bonjour ! 👋\nJe suis Zeno, votre assistant IA. Posez-moi toutes vos questions, je suis là pour vous aider.")
+        )
+    }
+    var input by remember { mutableStateOf("") }
+    val speech = rememberDirectSpeechInput { spoken -> input = spoken }
+
+    Column(Modifier.fillMaxSize().padding(14.dp)) {
+        LazyColumn(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+            items(messages) { msg -> MessageBubble(msg, accent) }
+        }
+        if (speech.status.isNotBlank()) {
+            Text(
+                speech.status,
+                color = if (speech.listening) Color(0xFF59D8FF) else Color(0xFF91A4CE),
+                fontSize = 12.sp,
+                modifier = Modifier.padding(start = 8.dp, bottom = 4.dp)
+            )
+        }
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            OutlinedTextField(
+                value = input,
+                onValueChange = { input = it },
+                modifier = Modifier.weight(1f),
+                placeholder = { Text(if (speech.listening) "Je t’écoute…" else "Écris un message...") },
+                keyboardOptions = KeyboardOptions(imeAction = ImeAction.Send),
+                keyboardActions = KeyboardActions(onSend = { sendChat(input, messages, brain) { input = "" } })
+            )
+            IconButton(onClick = speech.start) {
+                Icon(
+                    if (speech.listening) Icons.Default.GraphicEq else Icons.Default.Mic,
+                    contentDescription = "Microphone",
+                    tint = if (speech.listening) Color(0xFF59D8FF) else accent
+                )
+            }
+            FilledIconButton(onClick = { sendChat(input, messages, brain) { input = "" } }) {
+                Icon(Icons.Default.Send, null)
+            }
+        }
+    }
+}
+
+private fun sendChat'''
+s, count = re.subn(
+    r'@Composable\nprivate fun ChatScreen\(accent: Color\) \{.*?\n\}\n\nprivate fun sendChat',
+    chat,
+    s,
+    count=1,
+    flags=re.S
+)
+if count != 1:
+    raise SystemExit('Bloc ChatScreen introuvable')
+
+old_voice = '''    val voiceLauncher = rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
+        if (result.resultCode == Activity.RESULT_OK) {
+            text = result.data?.getStringArrayListExtra(RecognizerIntent.EXTRA_RESULTS)?.firstOrNull().orEmpty()
+        }
+    }
+'''
+new_voice = '''    val speech = rememberDirectSpeechInput { spoken -> text = spoken }
+'''
+if old_voice not in s:
+    raise SystemExit('Bloc vocal traduction introuvable')
+s = s.replace(old_voice, new_voice, 1)
+s = s.replace(
+    '''OutlinedButton(onClick = { launchSpeech(context, voiceLauncher) }, modifier = Modifier.weight(1f)) {
+                Icon(Icons.Default.Mic, null)
+                Spacer(Modifier.width(6.dp))
+                Text("Dicter")
+            }''',
+    '''OutlinedButton(onClick = speech.start, modifier = Modifier.weight(1f)) {
+                Icon(if (speech.listening) Icons.Default.GraphicEq else Icons.Default.Mic, null)
+                Spacer(Modifier.width(6.dp))
+                Text(if (speech.listening) "Je t’écoute…" else "Dicter")
+            }''',
+    1
+)
+s = s.replace(
+    '''        if (status.isNotBlank()) Text(status, color = Color(0xFFFFC46B), modifier = Modifier.padding(top = 8.dp))
+    }
+}
+
+@Composable
+private fun CustomizeScreen''',
+    '''        if (speech.status.isNotBlank()) Text(speech.status, color = Color(0xFF59D8FF), modifier = Modifier.padding(top = 8.dp))
+        if (status.isNotBlank()) Text(status, color = Color(0xFFFFC46B), modifier = Modifier.padding(top = 8.dp))
+    }
+}
+
+@Composable
+private fun CustomizeScreen''',
+    1
+)
+
+helper = r'''
+@Composable
+private fun rememberDirectSpeechInput(onText: (String) -> Unit): SpeechInputState {
+    val context = LocalContext.current
+    val currentOnText by rememberUpdatedState(onText)
+    var listening by remember { mutableStateOf(false) }
+    var status by remember { mutableStateOf("") }
+
+    val recognizer = remember(context) {
+        if (!SpeechRecognizer.isRecognitionAvailable(context)) {
+            null
+        } else if (
+            Build.VERSION.SDK_INT >= Build.VERSION_CODES.S &&
+            SpeechRecognizer.isOnDeviceRecognitionAvailable(context)
+        ) {
+            SpeechRecognizer.createOnDeviceSpeechRecognizer(context)
+        } else {
+            SpeechRecognizer.createSpeechRecognizer(context)
+        }
+    }
+
+    DisposableEffect(recognizer) {
+        recognizer?.setRecognitionListener(object : RecognitionListener {
+            override fun onReadyForSpeech(params: Bundle?) {
+                listening = true
+                status = "Je t’écoute…"
+            }
+            override fun onBeginningOfSpeech() {
+                listening = true
+                status = "Je t’écoute…"
+            }
+            override fun onRmsChanged(rmsdB: Float) = Unit
+            override fun onBufferReceived(buffer: ByteArray?) = Unit
+            override fun onEndOfSpeech() { status = "Transcription…" }
+            override fun onError(error: Int) {
+                listening = false
+                status = when (error) {
+                    SpeechRecognizer.ERROR_NO_MATCH -> "Je n’ai pas compris. Réessaie."
+                    SpeechRecognizer.ERROR_SPEECH_TIMEOUT -> "Je n’ai rien entendu."
+                    SpeechRecognizer.ERROR_NETWORK, SpeechRecognizer.ERROR_NETWORK_TIMEOUT -> "Reconnaissance vocale indisponible."
+                    else -> "Micro prêt. Appuie pour réessayer."
+                }
+            }
+            override fun onResults(results: Bundle?) {
+                listening = false
+                val spoken = results?.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION)?.firstOrNull()?.trim().orEmpty()
+                if (spoken.isNotBlank()) {
+                    currentOnText(spoken)
+                    status = "Texte reconnu"
+                } else status = "Je n’ai pas compris. Réessaie."
+            }
+            override fun onPartialResults(partialResults: Bundle?) {
+                val partial = partialResults?.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION)?.firstOrNull()?.trim().orEmpty()
+                if (partial.isNotBlank()) currentOnText(partial)
+            }
+            override fun onEvent(eventType: Int, params: Bundle?) = Unit
+        })
+        onDispose { recognizer?.destroy() }
+    }
+
+    val startRecognition: () -> Unit = {
+        if (recognizer == null) {
+            status = "Reconnaissance vocale indisponible sur ce téléphone."
+            Toast.makeText(context, status, Toast.LENGTH_SHORT).show()
+        } else {
+            val intent = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {
+                putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
+                putExtra(RecognizerIntent.EXTRA_LANGUAGE, Locale.getDefault().toLanguageTag())
+                putExtra(RecognizerIntent.EXTRA_PARTIAL_RESULTS, true)
+                putExtra(RecognizerIntent.EXTRA_MAX_RESULTS, 3)
+            }
+            status = "Je t’écoute…"
+            listening = true
+            runCatching { recognizer.startListening(intent) }.onFailure {
+                listening = false
+                status = "Impossible de démarrer le microphone."
+            }
+        }
+    }
+
+    val permissionLauncher = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
+        if (granted) startRecognition() else {
+            listening = false
+            status = "Autorise le microphone pour parler à Zeno."
+            Toast.makeText(context, status, Toast.LENGTH_LONG).show()
+        }
+    }
+
+    val start: () -> Unit = {
+        if (ContextCompat.checkSelfPermission(context, Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED) {
+            startRecognition()
+        } else permissionLauncher.launch(Manifest.permission.RECORD_AUDIO)
+    }
+
+    return SpeechInputState(listening, status, start)
+}
+
+'''
+if 'private fun rememberDirectSpeechInput' not in s:
+    s = s.replace('private fun startFloatingZeno(context: Context) {', helper + 'private fun startFloatingZeno(context: Context) {')
+
+path.write_text(s, encoding='utf-8')
+print('Micro direct appliqué à MainActivity.kt')
