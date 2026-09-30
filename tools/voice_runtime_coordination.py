@@ -52,9 +52,21 @@ if old_save not in main:
     raise SystemExit('Bloc de sauvegarde final introuvable')
 main = main.replace(old_save, new_save, 1)
 
-# 2) L'écran vocal n'arrête plus FloatingZenoService.
-# Le précédent stopService puis startForegroundService dans onDestroy pouvait provoquer
-# un crash lors de la relance d'un service microphone sur Android récent.
+# 2) Coordination robuste entre le service flottant et l'activité vocale.
+if 'import com.zeno.robot.service.VoiceSessionCoordinator' not in voice:
+    voice = voice.replace(
+        'import com.zeno.robot.data.ZenoBrain\n',
+        'import com.zeno.robot.data.ZenoBrain\nimport com.zeno.robot.service.VoiceSessionCoordinator\n',
+        1
+    )
+
+if 'VoiceSessionCoordinator.directVoiceActive = true' not in voice:
+    voice = voice.replace(
+        '        super.onCreate()\n',
+        '        super.onCreate()\n        VoiceSessionCoordinator.directVoiceActive = true\n',
+        1
+    )
+
 old_create = '''    private fun createRecognizer(): SpeechRecognizer {
         return if (
             Build.VERSION.SDK_INT >= Build.VERSION_CODES.S &&
@@ -108,16 +120,17 @@ voice = voice.replace(
         speechRecognizer = null
         runCatching { tts?.shutdown() }
         tts = null
+        VoiceSessionCoordinator.directVoiceActive = false
         super.onDestroy()
     }
 ''',
 1
 )
+if 'VoiceSessionCoordinator.directVoiceActive = false' not in voice:
+    raise SystemExit('Libération de la session vocale introuvable')
 
-# 3) Quand on touche Zeno flottant, le service reste en premier plan mais libère
-# complètement SON SpeechRecognizer avant d'ouvrir l'activité vocale. L'activité peut
-# donc prendre le micro sans conflit. Le service recrée ensuite son recognizer sur place,
-# sans stop/start du foreground service.
+# 3) Le service libère son recognizer avant d'ouvrir le vocal direct et ne le recrée
+# que lorsque l'activité vocale a réellement terminé.
 old_open = '''    private fun openReliableVoiceCommand() {
         pauseWakeUntil = System.currentTimeMillis() + 5000L
         speechRecognizer?.cancel()
@@ -131,7 +144,7 @@ old_open = '''    private fun openReliableVoiceCommand() {
     }
 '''
 new_open = '''    private fun openReliableVoiceCommand() {
-        pauseWakeUntil = System.currentTimeMillis() + 6500L
+        pauseWakeUntil = Long.MAX_VALUE
         runCatching { speechRecognizer?.cancel() }
         runCatching { speechRecognizer?.destroy() }
         speechRecognizer = null
@@ -140,6 +153,7 @@ new_open = '''    private fun openReliableVoiceCommand() {
         wakeMode = true
         setBubbleListening(false)
 
+        VoiceSessionCoordinator.directVoiceActive = true
         val opened = runCatching {
             startActivity(
                 Intent(this, VoiceCommandActivity::class.java)
@@ -147,27 +161,62 @@ new_open = '''    private fun openReliableVoiceCommand() {
             )
         }.isSuccess
 
-        if (!opened) pauseWakeUntil = 0L
+        if (!opened) {
+            VoiceSessionCoordinator.directVoiceActive = false
+            pauseWakeUntil = 0L
+        }
 
+        waitForDirectVoiceToFinish()
+    }
+
+    private fun waitForDirectVoiceToFinish() {
         handler.postDelayed({
-            if (speechRecognizer == null) runCatching { prepareSpeechRecognizer() }
-            if (!listening && !wakeTriggered) runCatching { startWakeListening() }
-        }, 6800)
+            if (VoiceSessionCoordinator.directVoiceActive) {
+                waitForDirectVoiceToFinish()
+            } else {
+                pauseWakeUntil = 0L
+                if (speechRecognizer == null) runCatching { prepareSpeechRecognizer() }
+                if (!listening && !wakeTriggered) runCatching { startWakeListening() }
+            }
+        }, 700)
     }
 '''
 if old_open not in service:
     raise SystemExit('Bloc openReliableVoiceCommand introuvable')
 service = service.replace(old_open, new_open, 1)
 
-# Evite d'empiler plusieurs startListening lors d'un onStartCommand répété.
+old_start = '''    private fun startWakeListening() {
+        if (System.currentTimeMillis() < pauseWakeUntil) return
+'''
+new_start = '''    private fun startWakeListening() {
+        if (VoiceSessionCoordinator.directVoiceActive) return
+        if (System.currentTimeMillis() < pauseWakeUntil) return
+'''
+if old_start not in service:
+    raise SystemExit('startWakeListening introuvable')
+service = service.replace(old_start, new_start, 1)
+
 service = service.replace(
 '''        if (speechRecognizer == null) runCatching { prepareSpeechRecognizer() }
         handler.postDelayed({ runCatching { startWakeListening() } }, 350)
 ''',
-'''        if (speechRecognizer == null) runCatching { prepareSpeechRecognizer() }
-        if (!listening && !wakeTriggered) {
+'''        if (speechRecognizer == null && !VoiceSessionCoordinator.directVoiceActive) {
+            runCatching { prepareSpeechRecognizer() }
+        }
+        if (!listening && !wakeTriggered && !VoiceSessionCoordinator.directVoiceActive) {
             handler.postDelayed({ runCatching { startWakeListening() } }, 650)
         }
+''',
+1
+)
+
+service = service.replace(
+'''    private fun prepareSpeechRecognizer() {
+        if (speechRecognizer != null || !SpeechRecognizer.isRecognitionAvailable(this)) return
+''',
+'''    private fun prepareSpeechRecognizer() {
+        if (VoiceSessionCoordinator.directVoiceActive) return
+        if (speechRecognizer != null || !SpeechRecognizer.isRecognitionAvailable(this)) return
 ''',
 1
 )
@@ -175,4 +224,4 @@ service = service.replace(
 MAIN.write_text(main, encoding='utf-8')
 VOICE.write_text(voice, encoding='utf-8')
 SERVICE.write_text(service, encoding='utf-8')
-print('Correctif appliqué : Zeno flottant reste actif, seul le recognizer est libéré puis recréé')
+print('Correctif appliqué : session micro exclusive, reprise automatique sans minuterie fixe')
