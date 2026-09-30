@@ -30,6 +30,10 @@
         android:theme="@style/Theme.Zeno">
 
         <activity
+            android:name=".LauncherActivityV124"
+            android:exported="true"
+            android:launchMode="singleTask" />
+        <activity
             android:name=".LauncherActivityV123"
             android:exported="true"
             android:launchMode="singleTask" />
@@ -57,7 +61,7 @@
             android:exported="true"
             android:icon="@drawable/zeno_icon_cyan"
             android:label="Zeno Launcher"
-            android:targetActivity=".LauncherActivityV123">
+            android:targetActivity=".LauncherActivityV124">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.HOME" />
@@ -71,20 +75,20 @@
             android:exported="true"
             android:icon="@drawable/zeno_icon_cyan"
             android:label="Zeno"
-            android:targetActivity=".LauncherActivityV123">
+            android:targetActivity=".LauncherActivityV124">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity-alias>
 
-        <activity-alias android:name=".LauncherViolet" android:enabled="false" android:exported="true" android:icon="@drawable/zeno_icon_violet" android:label="Zeno" android:targetActivity=".LauncherActivityV123">
+        <activity-alias android:name=".LauncherViolet" android:enabled="false" android:exported="true" android:icon="@drawable/zeno_icon_violet" android:label="Zeno" android:targetActivity=".LauncherActivityV124">
             <intent-filter><action android:name="android.intent.action.MAIN"/><category android:name="android.intent.category.LAUNCHER"/></intent-filter>
         </activity-alias>
-        <activity-alias android:name=".LauncherGold" android:enabled="false" android:exported="true" android:icon="@drawable/zeno_icon_gold" android:label="Zeno" android:targetActivity=".LauncherActivityV123">
+        <activity-alias android:name=".LauncherGold" android:enabled="false" android:exported="true" android:icon="@drawable/zeno_icon_gold" android:label="Zeno" android:targetActivity=".LauncherActivityV124">
             <intent-filter><action android:name="android.intent.action.MAIN"/><category android:name="android.intent.category.LAUNCHER"/></intent-filter>
         </activity-alias>
-        <activity-alias android:name=".LauncherGreen" android:enabled="false" android:exported="true" android:icon="@drawable/zeno_icon_green" android:label="Zeno" android:targetActivity=".LauncherActivityV123">
+        <activity-alias android:name=".LauncherGreen" android:enabled="false" android:exported="true" android:icon="@drawable/zeno_icon_green" android:label="Zeno" android:targetActivity=".LauncherActivityV124">
             <intent-filter><action android:name="android.intent.action.MAIN"/><category android:name="android.intent.category.LAUNCHER"/></intent-filter>
         </activity-alias>
 
