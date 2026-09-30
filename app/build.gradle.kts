@@ -13,8 +13,8 @@ android {
         applicationId = "com.zeno.robot"
         minSdk = 26
         targetSdk = 35
-        versionCode = 34
-        versionName = "1.2.9"
+        versionCode = 35
+        versionName = "1.3.0"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables { useSupportLibrary = true }
         buildConfigField("String", "ZENO_API_URL", "\"\"")
@@ -47,8 +47,20 @@ val installZenoRobot by tasks.registering {
     }
 }
 
+val installZenoIcon by tasks.registering {
+    doLast {
+        val source = file("src/main/assets/zeno_icon_discret.b64")
+        require(source.exists()) { "Icône Zeno discrète introuvable" }
+        val iconBytes = Base64.getDecoder().decode(source.readText().trim())
+        val target = file("src/main/res/drawable/zeno_icon_discret.webp")
+        target.parentFile.mkdirs()
+        target.writeBytes(iconBytes)
+        println("Icône Zeno discrète installée: ${iconBytes.size} octets")
+    }
+}
+
 tasks.named("preBuild").configure {
-    dependsOn(installZenoRobot)
+    dependsOn(installZenoRobot, installZenoIcon)
 }
 
 dependencies {
