@@ -1,13 +1,12 @@
 from pathlib import Path
+import re
 
 MAIN = Path('app/src/main/java/com/zeno/robot/MainActivity.kt')
 main = MAIN.read_text(encoding='utf-8')
 
-# Une seule source persistante, un fichier privé à l'application. Cela évite les
-# problèmes de cache SharedPreferences entre le processus principal et :voice.
-old_state = '''    val prefs = remember { context.getSharedPreferences("zeno_voice", Context.MODE_PRIVATE) }
-    var wakePhrase by remember { mutableStateOf(prefs.getString("wake_phrase", "Salut Zeno") ?: "Salut Zeno") }
-'''
+# Une seule source persistante : un fichier privé commun aux processus de l'app.
+# On accepte aussi bien l'état initial que l'état déjà transformé par les étapes
+# précédentes du pipeline, afin que ce correctif ne casse plus la compilation.
 new_state = '''    val wakePhraseFile = remember { java.io.File(context.filesDir, "wake_phrase.txt") }
     var wakePhrase by remember {
         mutableStateOf(
@@ -18,31 +17,75 @@ new_state = '''    val wakePhraseFile = remember { java.io.File(context.filesDir
         )
     }
 '''
-if old_state not in main:
+
+state_patterns = [
+    re.compile(
+        r'''    val prefs = remember \{ context\.getSharedPreferences\("zeno_voice", Context\.MODE_PRIVATE\) \}\n'''
+        r'''    val savedWakePhrase = remember \{\n.*?'''
+        r'''    \}\n'''
+        r'''    var wakePhrase by remember \{ mutableStateOf\(savedWakePhrase\) \}\n''',
+        re.S,
+    ),
+    re.compile(
+        r'''    val prefs = remember \{ context\.getSharedPreferences\("zeno_voice", Context\.MODE_PRIVATE\) \}\n'''
+        r'''    var wakePhrase by remember \{ mutableStateOf\(prefs\.getString\("wake_phrase", "Salut Zeno"\) \?: "Salut Zeno"\) \}\n'''
+    ),
+]
+
+state_replaced = False
+for pattern in state_patterns:
+    main, count = pattern.subn(new_state, main, count=1)
+    if count:
+        state_replaced = True
+        break
+
+if not state_replaced and 'val wakePhraseFile = remember { java.io.File(context.filesDir, "wake_phrase.txt") }' not in main:
     raise SystemExit('Etat de la phrase vocale introuvable')
-main = main.replace(old_state, new_state, 1)
 
-# Le clic Enregistrer ne touche jamais au service micro, ne relance aucune activité
-# et ne dépend plus de SharedPreferences. Toutes les E/S sont protégées.
-old_save = '''                        wakePhrase = clean
-                        prefs.edit { putString("wake_phrase", clean) }
-                        runCatching {
-                            java.io.File(context.filesDir, "wake_phrase.txt").writeText(clean)
-                        }
-                        editWakePhrase = false
-                        Toast.makeText(context, "Phrase enregistrée", Toast.LENGTH_SHORT).show()
-'''
-new_save = '''                        // Ferme d'abord le dialogue puis met à jour l'interface.
-                        // Même si le stockage échoue, aucune exception ne doit fermer Zeno.
-                        editWakePhrase = false
+# Le bouton Enregistrer ne redémarre jamais le service vocal et ne touche pas au
+# SpeechRecognizer. L'écriture du fichier est protégée et ne peut pas faire fermer Zeno.
+new_save = '''                        editWakePhrase = false
                         wakePhrase = clean
-                        runCatching { wakePhraseFile.writeText(clean) }
+                        val saved = runCatching {
+                            wakePhraseFile.writeText(clean)
+                            true
+                        }.getOrDefault(false)
+                        Toast.makeText(
+                            context,
+                            if (saved) "Phrase enregistrée" else "Impossible d'enregistrer la phrase",
+                            if (saved) Toast.LENGTH_SHORT else Toast.LENGTH_LONG
+                        ).show()
 '''
-if old_save not in main:
-    raise SystemExit('Bloc final Enregistrer introuvable')
-main = main.replace(old_save, new_save, 1)
 
-# Les imports KTX/Toast peuvent avoir été ajoutés par les étapes précédentes.
-# On les laisse si utilisés ailleurs ; Kotlin accepte les imports non utilisés.
+save_patterns = [
+    re.compile(
+        r'''                        val saved = runCatching \{\n.*?'''
+        r'''                        \}\.getOrDefault\(false\)\n'''
+        r'''                        if \(saved\) \{\n.*?'''
+        r'''                        \} else \{\n.*?'''
+        r'''                        \}\n''',
+        re.S,
+    ),
+    re.compile(
+        r'''                        wakePhrase = clean\n'''
+        r'''                        prefs\.edit \{ putString\("wake_phrase", clean\) \}\n'''
+        r'''                        runCatching \{\n'''
+        r'''                            java\.io\.File\(context\.filesDir, "wake_phrase\.txt"\)\.writeText\(clean\)\n'''
+        r'''                        \}\n'''
+        r'''                        editWakePhrase = false\n'''
+        r'''                        Toast\.makeText\(context, "Phrase enregistrée", Toast\.LENGTH_SHORT\)\.show\(\)\n'''
+    ),
+]
+
+save_replaced = False
+for pattern in save_patterns:
+    main, count = pattern.subn(new_save, main, count=1)
+    if count:
+        save_replaced = True
+        break
+
+if not save_replaced and 'wakePhraseFile.writeText(clean)' not in main:
+    raise SystemExit('Bloc final Enregistrer introuvable')
+
 MAIN.write_text(main, encoding='utf-8')
-print('Enregistrement de la phrase durci : aucun redémarrage micro, aucune opération non protégée')
+print('Enregistrement de la phrase durci : fichier privé uniquement, aucune relance micro')
