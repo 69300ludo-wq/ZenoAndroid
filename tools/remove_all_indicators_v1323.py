@@ -107,6 +107,18 @@ main = main.replace(
     'Text("Dis simplement « Zeno » pour lancer une commande vocale.", color = Color(0xFF9AB4D8))'
 )
 main = main.replace('Micro Android et voyant du tiroir', 'Micro Android')
+
+# Les anciens écrans générés utilisent encore SharedPreferences.edit() classique.
+# Corriger toutes les occurrences restantes pour que lintDebug passe en KTX.
+main = main.replace(
+    'prefs.edit().putBoolean("voice_enabled", true).apply()',
+    'prefs.edit { putBoolean("voice_enabled", true) }'
+)
+main = main.replace(
+    'prefs.edit().putBoolean("voice_enabled", false).apply()',
+    'prefs.edit { putBoolean("voice_enabled", false) }'
+)
+
 main = main.replace('Zeno Android v1.3.22', 'Zeno Android v1.3.23')
 main = main.replace('Version 1.3.22', 'Version 1.3.23')
 MAIN.write_text(main, encoding='utf-8')
