@@ -104,13 +104,15 @@ jobs:
         run: python3 tools/direct_voice_lint_fix.py
       - name: Unifier le bouton vocal de l accueil
         run: python3 tools/home_voice_same_engine.py
+      - name: Demander la permission micro au démarrage
+        run: python3 tools/micro_permission_startup.py
       - name: Vérifier et compiler APK
         run: ./gradlew lintDebug assembleDebug
       - name: Upload ZIP APK et rapport
         if: always()
         uses: actions/upload-artifact@v6
         with:
-          name: Zeno-v1.3.10-accueil-vocal
+          name: Zeno-v1.3.11-permission-micro
           path: |
             app/build/outputs/apk/debug/app-debug.apk
             app/build/reports/lint-results-debug.html
