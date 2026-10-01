@@ -8,6 +8,13 @@ SERVICE = Path('app/src/main/java/com/zeno/robot/service/FloatingZenoService.kt'
 # explicitement la nouvelle position au service, qui la sauvegarde lui-même et déplace
 # le voyant tout de suite.
 service = SERVICE.read_text(encoding='utf-8')
+
+if 'import androidx.core.content.edit\n' not in service:
+    anchor = 'import androidx.core.content.ContextCompat\n'
+    if anchor not in service:
+        raise SystemExit('Import ContextCompat service introuvable')
+    service = service.replace(anchor, anchor + 'import androidx.core.content.edit\n', 1)
+
 old_on_start = '''    override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         showOverlayDot()
         if (!hasMic()) {
@@ -25,10 +32,9 @@ new_on_start = '''    override fun onStartCommand(intent: Intent?, flags: Int, s
         if (intent?.action == ACTION_UPDATE_INDICATOR_POSITION) {
             val requested = intent.getStringExtra(EXTRA_INDICATOR_POSITION)
             if (!requested.isNullOrBlank()) {
-                getSharedPreferences("zeno_indicator", MODE_PRIVATE)
-                    .edit()
-                    .putString("indicator_position", requested)
-                    .apply()
+                getSharedPreferences("zeno_indicator", MODE_PRIVATE).edit {
+                    putString("indicator_position", requested)
+                }
             }
             showOverlayDot()
             return START_STICKY
@@ -94,4 +100,4 @@ main = main.replace('Zeno Android v1.3.15', 'Zeno Android v1.3.16')
 main = main.replace('Version 1.3.15', 'Version 1.3.16')
 MAIN.write_text(main, encoding='utf-8')
 
-print('Zeno 1.3.16 : position du voyant envoyée directement au service :voice')
+print('Zeno 1.3.16 : position du voyant envoyée directement au service :voice + lint KTX')
