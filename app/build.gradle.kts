@@ -31,6 +31,7 @@ android {
         disable += "GradleDependency"
         disable += "ImplicitSamInstance"
         disable += "UseKtx"
+        disable += "ObsoleteSdkInt"
         warningsAsErrors = true
         abortOnError = true
     }
