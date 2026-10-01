@@ -128,13 +128,15 @@ jobs:
         run: python3 tools/voice_indicator_polish_v1319.py
       - name: Garder un seul voyant accueil et supprimer le bip
         run: python3 tools/home_indicator_no_overlay_no_beep_v1320.py
+      - name: Renforcer suppression bip et voyant accueil
+        run: python3 tools/no_beep_home_indicator_v1321.py
       - name: Vérifier et compiler APK
         run: ./gradlew lintDebug assembleDebug
       - name: Upload ZIP APK et rapport
         if: always()
         uses: actions/upload-artifact@v6
         with:
-          name: Zeno-v1.3.20-voyant-accueil-sans-bip
+          name: Zeno-v1.3.21-sans-bip-voyant-accueil
           path: |
             app/build/outputs/apk/debug/app-debug.apk
             app/build/reports/lint-results-debug.html
