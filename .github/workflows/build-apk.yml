@@ -114,6 +114,8 @@ jobs:
         run: python3 tools/permissions_overlay_lint_fix.py
       - name: Phrase Zeno ouvre et commandes téléphone
         run: python3 tools/voice_phone_power_v1314.py
+      - name: Corriger actions Android téléphone
+        run: python3 tools/voice_phone_power_fix_v1314.py
       - name: Vérifier et compiler APK
         run: ./gradlew lintDebug assembleDebug
       - name: Upload ZIP APK et rapport
