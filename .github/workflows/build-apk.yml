@@ -112,13 +112,15 @@ jobs:
         run: python3 tools/permissions_overlay_menu_v1313.py
       - name: Corriger lint permissions superposition
         run: python3 tools/permissions_overlay_lint_fix.py
+      - name: Phrase Zeno ouvre et commandes téléphone
+        run: python3 tools/voice_phone_power_v1314.py
       - name: Vérifier et compiler APK
         run: ./gradlew lintDebug assembleDebug
       - name: Upload ZIP APK et rapport
         if: always()
         uses: actions/upload-artifact@v6
         with:
-          name: Zeno-v1.3.13-permissions-voyant
+          name: Zeno-v1.3.14-zeno-ouvre-telephone
           path: |
             app/build/outputs/apk/debug/app-debug.apk
             app/build/reports/lint-results-debug.html
