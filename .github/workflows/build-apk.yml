@@ -106,13 +106,15 @@ jobs:
         run: python3 tools/home_voice_same_engine.py
       - name: Demander la permission micro au démarrage
         run: python3 tools/micro_permission_startup.py
+      - name: Renforcer vocal accueil voyant et applications
+        run: python3 tools/voice_home_apps_v1312.py
       - name: Vérifier et compiler APK
         run: ./gradlew lintDebug assembleDebug
       - name: Upload ZIP APK et rapport
         if: always()
         uses: actions/upload-artifact@v6
         with:
-          name: Zeno-v1.3.11-permission-micro
+          name: Zeno-v1.3.12-vocal-apps
           path: |
             app/build/outputs/apk/debug/app-debug.apk
             app/build/reports/lint-results-debug.html
