@@ -124,13 +124,15 @@ jobs:
         run: python3 tools/home_drag_indicator_v1317.py
       - name: Changer la phrase de réveil en Zeno
         run: python3 tools/wake_zeno_v1318.py
+      - name: Améliorer le vocal et retirer le bip
+        run: python3 tools/voice_indicator_polish_v1319.py
       - name: Vérifier et compiler APK
         run: ./gradlew lintDebug assembleDebug
       - name: Upload ZIP APK et rapport
         if: always()
         uses: actions/upload-artifact@v6
         with:
-          name: Zeno-v1.3.18-zeno-voyant-glissable
+          name: Zeno-v1.3.19-vocal-sans-bip-voyant-libre
           path: |
             app/build/outputs/apk/debug/app-debug.apk
             app/build/reports/lint-results-debug.html
