@@ -122,13 +122,15 @@ jobs:
         run: python3 tools/indicator_position_fix_v1316.py
       - name: Rendre le voyant accueil glissable au doigt
         run: python3 tools/home_drag_indicator_v1317.py
+      - name: Changer la phrase de réveil en Zeno
+        run: python3 tools/wake_zeno_v1318.py
       - name: Vérifier et compiler APK
         run: ./gradlew lintDebug assembleDebug
       - name: Upload ZIP APK et rapport
         if: always()
         uses: actions/upload-artifact@v6
         with:
-          name: Zeno-v1.3.17-voyant-glissable
+          name: Zeno-v1.3.18-zeno-voyant-glissable
           path: |
             app/build/outputs/apk/debug/app-debug.apk
             app/build/reports/lint-results-debug.html
