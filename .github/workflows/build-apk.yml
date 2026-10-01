@@ -110,6 +110,8 @@ jobs:
         run: python3 tools/voice_home_apps_v1312.py
       - name: Ajouter menu permissions et voyant superposé
         run: python3 tools/permissions_overlay_menu_v1313.py
+      - name: Corriger lint permissions superposition
+        run: python3 tools/permissions_overlay_lint_fix.py
       - name: Vérifier et compiler APK
         run: ./gradlew lintDebug assembleDebug
       - name: Upload ZIP APK et rapport
