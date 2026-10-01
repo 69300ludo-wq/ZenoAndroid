@@ -108,13 +108,15 @@ jobs:
         run: python3 tools/micro_permission_startup.py
       - name: Renforcer vocal accueil voyant et applications
         run: python3 tools/voice_home_apps_v1312.py
+      - name: Ajouter menu permissions et voyant superposé
+        run: python3 tools/permissions_overlay_menu_v1313.py
       - name: Vérifier et compiler APK
         run: ./gradlew lintDebug assembleDebug
       - name: Upload ZIP APK et rapport
         if: always()
         uses: actions/upload-artifact@v6
         with:
-          name: Zeno-v1.3.12-vocal-apps
+          name: Zeno-v1.3.13-permissions-voyant
           path: |
             app/build/outputs/apk/debug/app-debug.apk
             app/build/reports/lint-results-debug.html
