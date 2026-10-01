@@ -13,8 +13,8 @@ android {
         applicationId = "com.zeno.robot"
         minSdk = 26
         targetSdk = 36
-        versionCode = 51
-        versionName = "1.3.18"
+        versionCode = 52
+        versionName = "1.3.19"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables { useSupportLibrary = true }
         buildConfigField("String", "ZENO_API_URL", "\"\"")
