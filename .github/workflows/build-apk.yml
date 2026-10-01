@@ -136,13 +136,15 @@ jobs:
         run: python3 tools/remove_all_indicators_v1323.py
       - name: Ajouter menu vocal flottant et permissions directes
         run: python3 tools/floating_home_permissions_v1324.py
+      - name: Améliorer la détection vocale
+        run: python3 tools/voice_detection_v1325.py
       - name: Vérifier et compiler APK
         run: ./gradlew lintDebug assembleDebug
       - name: Upload ZIP APK et rapport
         if: always()
         uses: actions/upload-artifact@v6
         with:
-          name: Zeno-v1.3.24-menu-flottant-vocal
+          name: Zeno-v1.3.25-detection-vocale
           path: |
             app/build/outputs/apk/debug/app-debug.apk
             app/build/reports/lint-results-debug.html
