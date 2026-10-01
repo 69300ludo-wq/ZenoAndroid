@@ -138,13 +138,15 @@ jobs:
         run: python3 tools/floating_home_permissions_v1324.py
       - name: Améliorer la détection vocale
         run: python3 tools/voice_detection_v1325.py
+      - name: Ajouter météo et réponses vocales en ligne
+        run: python3 tools/voice_online_answers_v1326.py
       - name: Vérifier et compiler APK
         run: ./gradlew lintDebug assembleDebug
       - name: Upload ZIP APK et rapport
         if: always()
         uses: actions/upload-artifact@v6
         with:
-          name: Zeno-v1.3.25-detection-vocale
+          name: Zeno-v1.3.26-reponses-vocales-meteo
           path: |
             app/build/outputs/apk/debug/app-debug.apk
             app/build/reports/lint-results-debug.html
