@@ -13,8 +13,8 @@ android {
         applicationId = "com.zeno.robot"
         minSdk = 26
         targetSdk = 36
-        versionCode = 56
-        versionName = "1.3.23"
+        versionCode = 57
+        versionName = "1.3.24"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables { useSupportLibrary = true }
         buildConfigField("String", "ZENO_API_URL", "\"\"")
@@ -30,6 +30,7 @@ android {
     lint {
         disable += "GradleDependency"
         disable += "ImplicitSamInstance"
+        disable += "UseKtx"
         warningsAsErrors = true
         abortOnError = true
     }
