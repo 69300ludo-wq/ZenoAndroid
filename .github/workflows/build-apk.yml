@@ -118,13 +118,15 @@ jobs:
         run: python3 tools/voice_phone_power_fix_v1314.py
       - name: Personnaliser la position du voyant accueil
         run: python3 tools/indicator_position_v1315.py
+      - name: Corriger la position du voyant entre processus
+        run: python3 tools/indicator_position_fix_v1316.py
       - name: Vérifier et compiler APK
         run: ./gradlew lintDebug assembleDebug
       - name: Upload ZIP APK et rapport
         if: always()
         uses: actions/upload-artifact@v6
         with:
-          name: Zeno-v1.3.15-position-voyant
+          name: Zeno-v1.3.16-position-voyant-corrigee
           path: |
             app/build/outputs/apk/debug/app-debug.apk
             app/build/reports/lint-results-debug.html
