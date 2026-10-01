@@ -37,3 +37,13 @@ if old not in source:
     raise SystemExit('Bloc broadcastState à corriger introuvable')
 SCRIPT.write_text(source.replace(old, new, 1), encoding='utf-8')
 runpy.run_path(str(SCRIPT), run_name='__main__')
+
+# La ligne de permission de superposition utilise Uri.parse.
+main_path = Path('app/src/main/java/com/zeno/robot/MainActivity.kt')
+main = main_path.read_text(encoding='utf-8')
+if 'import android.net.Uri\n' not in main:
+    anchor = 'import android.content.Intent\n'
+    if anchor not in main:
+        raise SystemExit('Import Intent introuvable pour ajouter Uri')
+    main = main.replace(anchor, anchor + 'import android.net.Uri\n', 1)
+main_path.write_text(main, encoding='utf-8')
