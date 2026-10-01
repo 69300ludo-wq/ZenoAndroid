@@ -13,8 +13,8 @@ android {
         applicationId = "com.zeno.robot"
         minSdk = 26
         targetSdk = 36
-        versionCode = 49
-        versionName = "1.3.16"
+        versionCode = 50
+        versionName = "1.3.17"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables { useSupportLibrary = true }
         buildConfigField("String", "ZENO_API_URL", "\"\"")
@@ -28,12 +28,7 @@ android {
     composeOptions { kotlinCompilerExtensionVersion = "1.5.14" }
     packaging { resources.excludes += "/META-INF/{AL2.0,LGPL2.1}" }
     lint {
-        // Le projet reste volontairement sur la pile Kotlin 1.9.24 / Compose Compiler 1.5.14
-        // déjà validée. Les mises à jour Jetpack récentes imposent une migration Kotlin/Compose
-        // plus large et ne doivent pas être mélangées à un correctif de stabilité.
         disable += "GradleDependency"
-        // Faux positif du lint récent : Context.stopService(Intent explicite) compare le composant,
-        // pas l'identité de l'instance Intent comme un listener SAM.
         disable += "ImplicitSamInstance"
         warningsAsErrors = true
         abortOnError = true
@@ -42,14 +37,9 @@ android {
 
 val installZenoRobot by tasks.registering {
     doLast {
-        val parts = fileTree("src/main/assets") {
-            include("zeno_robot_*.b64")
-        }.files.sortedBy { it.name }
+        val parts = fileTree("src/main/assets") { include("zeno_robot_*.b64") }.files.sortedBy { it.name }
         require(parts.isNotEmpty()) { "Robot Zeno officiel introuvable" }
-
-        val encoded = buildString {
-            parts.forEach { append(it.readText().trim()) }
-        }
+        val encoded = buildString { parts.forEach { append(it.readText().trim()) } }
         val robotBytes = Base64.getDecoder().decode(encoded)
         file("src/main/res/drawable/zeno_robot.webp").delete()
         val target = file("src/main/res/drawable-nodpi/zeno_robot.webp")
@@ -72,9 +62,7 @@ val installZenoIcon by tasks.registering {
     }
 }
 
-tasks.named("preBuild").configure {
-    dependsOn(installZenoRobot, installZenoIcon)
-}
+tasks.named("preBuild").configure { dependsOn(installZenoRobot, installZenoIcon) }
 
 dependencies {
     val composeBom = platform("androidx.compose:compose-bom:2024.06.00")
